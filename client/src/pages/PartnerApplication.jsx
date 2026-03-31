@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import api from "../config/api.js";
 import { professions } from "../components/Professions";
+import { useLang } from "../context/LanguageContext.jsx";
+import translations from "../context/translations.js";
 
 /* ===========================
    Dynamic Work Types
@@ -53,6 +55,10 @@ const PartnerApplication = () => {
   const profession = professions.find((p) => p.id === professionId);
   const workTypes = workTypesByProfession[professionId] || [];
 
+  const { lang } = useLang();
+  const t = translations[lang].partnerApp;
+  const tProf = translations[lang].professions;
+
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -89,7 +95,7 @@ const PartnerApplication = () => {
   =========================== */
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {
-      return toast.error("Geolocation not supported");
+      return toast.error(t.geoNotSupported);
     }
 
     setLocating(true);
@@ -104,11 +110,11 @@ const PartnerApplication = () => {
           lng,
           location: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
         }));
-        toast.success("Location detected successfully");
+        toast.success(t.locationDetected);
         setLocating(false);
       },
       () => {
-        toast.error("Unable to fetch location");
+        toast.error(t.geoError);
         setLocating(false);
       }
     );
@@ -144,7 +150,7 @@ const PartnerApplication = () => {
     e.preventDefault();
 
     if (!idProof || !skillProof) {
-      return toast.error("Please upload required documents");
+      return toast.error(t.uploadRequired);
     }
 
     try {
@@ -169,7 +175,7 @@ const PartnerApplication = () => {
       await api.post("/partners/apply", data);
       setShowSuccess(true);
     } catch (err) {
-      toast.error("Submission failed. Please try again.");
+      toast.error(t.submitFailed);
     } finally {
       setLoading(false);
     }
@@ -196,15 +202,15 @@ const PartnerApplication = () => {
 
             <div>
               <span className="text-xs font-medium text-indigo-600">
-                Step 2 of 2
+                {t.step2}
               </span>
               <h1 className="text-2xl font-semibold text-slate-900">
-                Partner Application
+                {t.heading}
               </h1>
               <p className="text-slate-600">
-                Applying as{" "}
+                {t.applyingAs}{" "}
                 <span className="font-medium text-indigo-600">
-                  {profession?.label}
+                  {tProf[professionId]?.label || profession?.label}
                 </span>
               </p>
             </div>
@@ -215,10 +221,10 @@ const PartnerApplication = () => {
             onSubmit={handleSubmit}
             className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2"
           >
-            <Input label="Full Name" name="fullName" onChange={handleChange} />
-            <Input label="Phone Number" name="phone" onChange={handleChange} />
+            <Input label={t.fullName} name="fullName" onChange={handleChange} />
+            <Input label={t.phone} name="phone" onChange={handleChange} />
             <Input
-              label="Years of Experience"
+              label={t.yearsExp}
               name="experience"
               type="number"
               onChange={handleChange}
@@ -227,7 +233,7 @@ const PartnerApplication = () => {
             {/* Location */}
             <div className="md:col-span-2">
               <label className="mb-2 block text-sm font-medium">
-                Service Location
+                {t.serviceLocation}
               </label>
 
               <div className="flex items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 relative">
@@ -237,7 +243,7 @@ const PartnerApplication = () => {
                   <input
                     type="text"
                     name="location"
-                    placeholder="Search area (e.g. Hazira)"
+                    placeholder={t.searchArea}
                     value={formData.location}
                     onChange={handleLocationChange}
                     onFocus={() => setShowSuggestions(true)}
@@ -276,40 +282,42 @@ const PartnerApplication = () => {
                   {locating ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Locating
+                      {t.locating}
                     </>
                   ) : (
-                    "Use current"
+                    t.useCurrent
                   )}
                 </button>
               </div>
 
               <p className="mt-2 text-xs text-slate-500 flex items-center h-4">
-                Type an area to see suggestions or use auto-detect.
+                {t.typeArea}
                 {formData.lat && formData.lng && (
                   <span className="text-green-600 font-medium ml-2 flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Coordinates mapped
+                    <CheckCircle2 size={12} /> {t.coordsMapped}
                   </span>
                 )}
               </p>
             </div>
 
             <FileInput
-              label="Identity Proof"
-              helper="Aadhaar / PAN / Passport"
+              label={t.idProof}
+              helper={t.idHelper}
+              t={t}
               onChange={(e) => setIdProof(e.target.files[0])}
             />
 
             <FileInput
-              label="Skill Proof"
-              helper="Certificate or work images"
+              label={t.skillProof}
+              helper={t.skillHelper}
+              t={t}
               onChange={(e) => setSkillProof(e.target.files[0])}
             />
 
             {/* Work Type */}
             <div className="md:col-span-2">
               <label className="mb-2 block text-sm font-medium">
-                Type of Work
+                {t.typeOfWork}
               </label>
               <select
                 name="workType"
@@ -318,7 +326,7 @@ const PartnerApplication = () => {
                 onChange={handleChange}
                 className="w-full rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-400"
               >
-                <option value="">Select work type</option>
+                <option value="">{t.selectWorkType}</option>
                 {workTypes.map((type) => (
                   <option key={type} value={type}>
                     {type}
@@ -334,7 +342,7 @@ const PartnerApplication = () => {
                 disabled={loading}
                 className="flex w-full items-center justify-center gap-3 rounded-xl bg-indigo-600 py-3 font-medium text-white hover:bg-indigo-700 transition"
               >
-                {loading ? "Submitting..." : "Submit Application"}
+                {loading ? t.submitting : t.submitApp}
               </button>
             </div>
           </form>
@@ -361,11 +369,11 @@ const PartnerApplication = () => {
               </div>
 
               <h2 className="text-xl font-semibold">
-                Application Submitted
+                {t.appSubmitted}
               </h2>
 
               <p className="mt-2 text-sm text-slate-600">
-                Our team will review your details and notify you shortly.
+                {t.teamReview}
               </p>
 
               <button
@@ -375,7 +383,7 @@ const PartnerApplication = () => {
                 }}
                 className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-white hover:bg-indigo-700 transition"
               >
-                Go to Home
+                {t.goHome}
               </button>
             </motion.div>
           </motion.div>
@@ -397,17 +405,28 @@ const Input = ({ label, ...props }) => (
   </div>
 );
 
-const FileInput = ({ label, helper, ...props }) => (
-  <div>
-    <label className="mb-2 block text-sm font-medium">{label}</label>
-    <input
-      type="file"
-      required
-      {...props}
-      className="w-full rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3"
-    />
-    <p className="mt-1 text-xs text-slate-500">{helper}</p>
-  </div>
-);
+const FileInput = ({ label, helper, t, ...props }) => {
+  const [fileName, setFileName] = React.useState("");
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium">{label}</label>
+      <label className="flex items-center gap-3 w-full rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 cursor-pointer hover:border-indigo-400 transition">
+        <span className="text-sm font-medium text-indigo-600 whitespace-nowrap">{t.chooseFile}</span>
+        <span className="text-sm text-slate-500 truncate">{fileName || t.noFileChosen}</span>
+          <input
+          type="file"
+          required
+          style={{ display: "none" }}
+          className="hidden"
+          onChange={(e) => {
+            setFileName(e.target.files[0]?.name || "");
+            props.onChange && props.onChange(e);
+          }}
+        />
+      </label>
+      <p className="mt-1 text-xs text-slate-500">{helper}</p>
+    </div>
+  );
+};
 
 export default PartnerApplication;

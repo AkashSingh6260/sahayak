@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import api from "../config/api";
 import { loginSuccess } from "../app/features/authSlice";
+import { useLang } from "../context/LanguageContext.jsx";
+import translations from "../context/translations.js";
 
 const Login = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();  const location = useLocation();
-  const [state, setState] = useState(location.pathname === '/register' ? 'register' : 'login'); // login | register
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [state, setState] = useState(location.pathname === '/register' ? 'register' : 'login');
   const [loading, setLoading] = useState(false);
 
-  // Sync state if URL changes (e.g. user clicks Navbar link while already on the page)
+  const { lang } = useLang();
+  const t = translations[lang].login;
+
+  // Sync state if URL changes
   useEffect(() => {
     setState(location.pathname === '/register' ? 'register' : 'login');
   }, [location.pathname]);
@@ -40,7 +46,6 @@ const Login = () => {
 
       const res = await api.post(endpoint, formData);
 
-      // ✅ Save user + token (localStorage persistence handled inside loginSuccess)
       dispatch(
         loginSuccess({
           user: res.data.user,
@@ -49,10 +54,9 @@ const Login = () => {
       );
 
       toast.success(
-        state === "login" ? "Logged in successfully" : "Account created"
+        state === "login" ? t.loggedInSuccess : t.accountCreated
       );
 
-      // 🔑 ROLE BASED REDIRECT
       const role = res.data.user?.role;
 
       if (role === "service_provider") {
@@ -64,7 +68,7 @@ const Login = () => {
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Something went wrong"
+        error.response?.data?.message || t.somethingWentWrong
       );
     } finally {
       setLoading(false);
@@ -80,12 +84,10 @@ const Login = () => {
         {/* HEADER */}
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">
-            {state === "login" ? "Welcome Back 👋" : "Create Account"}
+            {state === "login" ? t.welcomeBack : t.createAccount}
           </h1>
           <p className="text-sm text-gray-500 mt-2">
-            {state === "login"
-              ? "Login to continue"
-              : "Sign up to get started"}
+            {state === "login" ? t.loginToContinue : t.signUpToGetStarted}
           </p>
         </div>
 
@@ -94,7 +96,7 @@ const Login = () => {
           <input
             type="text"
             name="name"
-            placeholder="Full Name"
+            placeholder={t.fullName}
             value={formData.name}
             onChange={handleChange}
             className="w-full mt-6 h-12 px-4 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition"
@@ -106,7 +108,7 @@ const Login = () => {
         <input
           type="email"
           name="email"
-          placeholder="Email address"
+          placeholder={t.emailAddress}
           value={formData.email}
           onChange={handleChange}
           className="w-full mt-4 h-12 px-4 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition"
@@ -117,7 +119,7 @@ const Login = () => {
         <input
           type="password"
           name="password"
-          placeholder="Password"
+          placeholder={t.password}
           value={formData.password}
           onChange={handleChange}
           className="w-full mt-4 h-12 px-4 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition"
@@ -131,10 +133,10 @@ const Login = () => {
           className="w-full mt-6 h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold tracking-wide hover:opacity-95 active:scale-[0.98] transition"
         >
           {loading
-            ? "Please wait..."
+            ? t.pleaseWait
             : state === "login"
-            ? "Login"
-            : "Create Account"}
+            ? t.login
+            : t.createAccount}
         </button>
 
         {/* TOGGLE */}
@@ -146,11 +148,9 @@ const Login = () => {
           }}
           className="text-center text-sm text-gray-500 mt-6 cursor-pointer"
         >
-          {state === "login"
-            ? "Don't have an account?"
-            : "Already have an account?"}{" "}
+          {state === "login" ? t.dontHaveAccount : t.alreadyHaveAccount}{" "}
           <span className="text-indigo-600 font-medium hover:underline">
-            Click here
+            {t.clickHere}
           </span>
         </p>
       </form>

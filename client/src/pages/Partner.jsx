@@ -1,9 +1,14 @@
 import React from "react";
-import { professions } from "../components/Professions.jsx";
+import { professions as professionData } from "../components/Professions.jsx";
 import { useNavigate } from "react-router-dom";
+import { useLang } from "../context/LanguageContext.jsx";
+import translations from "../context/translations.js";
 
 const Partner = () => {
   const navigate = useNavigate();
+  const { lang } = useLang();
+  const t = translations[lang].partner;
+  const tProf = translations[lang].professions;
 
   return (
     <div className="min-h-screen bg-slate-50 py-14">
@@ -12,20 +17,17 @@ const Partner = () => {
         {/* ================= Header ================= */}
         <div className="mb-16 text-center">
           <span className="inline-block rounded-full bg-indigo-100 px-4 py-1 text-sm font-medium text-indigo-700">
-            Partner Onboarding
+            {t.badge}
           </span>
 
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900">
-            Become a <span className="text-indigo-600">Sahayak</span> Partner
+            {t.heading} <span className="text-indigo-600">{translations[lang].brand}</span> {t.headingSuffix}
           </h1>
 
           <p className="mx-auto mt-4 max-w-3xl text-base text-slate-600">
-            A{" "}
-            <strong className="text-indigo-600">
-              Sahayak partner
-            </strong>{" "}
-            is a verified professional who delivers trusted services on the
-            platform. Complete a short verification to start receiving work.
+            {t.description1}{" "}
+            <strong className="text-indigo-600">{t.description2}</strong>{" "}
+            {t.description3}
           </p>
         </div>
 
@@ -36,7 +38,7 @@ const Partner = () => {
               1
             </div>
             <p className="text-sm font-medium text-slate-800">
-              Select Profession
+              {t.stepLabel}
             </p>
           </div>
         </div>
@@ -44,17 +46,18 @@ const Partner = () => {
         {/* ================= Instruction ================= */}
         <div className="mb-10 text-center">
           <h2 className="text-lg font-semibold text-slate-900">
-            Choose your primary service
+            {t.chooseService}
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            You’ll complete verification for the selected profession
+            {t.chooseServiceSub}
           </p>
         </div>
 
         {/* ================= Profession Grid ================= */}
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-          {professions.map((profession) => {
+          {professionData.map((profession) => {
             const Icon = profession.icon;
+            const localised = tProf[profession.id] || {};
 
             return (
               <div
@@ -82,12 +85,12 @@ const Partner = () => {
 
                 {/* Title */}
                 <h3 className="mt-4 text-sm font-semibold text-slate-900">
-                  {profession.label}
+                  {localised.label || profession.label}
                 </h3>
 
                 {/* Hint */}
                 <p className="mt-1 text-xs text-slate-500">
-                  Tap to continue
+                  {t.tapToContinue}
                 </p>
               </div>
             );
@@ -96,7 +99,7 @@ const Partner = () => {
 
         {/* ================= Footer Hint ================= */}
         <div className="mt-16 text-center text-sm text-slate-500">
-          You can apply for additional professions later from your dashboard.
+          {t.footerHint}
         </div>
       </div>
     </div>

@@ -9,6 +9,8 @@ import {
 import toast from "react-hot-toast";
 import api from "../config/api";
 import useWebSocket from "../hooks/useWebSocket.js";
+import { useLang } from "../context/LanguageContext.jsx";
+import translations from "../context/translations.js";
 
 const COLORS = ["#22c55e", "#facc15", "#ef4444", "#94a3b8"];
 const GWALIOR_LOCATIONS = [
@@ -71,11 +73,14 @@ const ProviderDashboard = () => {
 
   useWebSocket(handleWsMessage);
 
+  const { lang } = useLang();
+  const t = translations[lang].providerDash;
+
   const displayStats = [
-    { title: "Total Requests", value: liveStats.totalJobs, icon: TrendingUp, color: "blue" },
-    { title: "Completed", value: liveStats.completedJobs, icon: CheckCircle, color: "emerald" },
-    { title: "Pending", value: liveStats.pendingJobs, icon: Clock, color: "amber" },
-    { title: "Total Earnings", value: `₹${liveStats.totalEarnings.toLocaleString()}`, icon: IndianRupee, color: "indigo" },
+    { title: t.totalRequests, value: liveStats.totalJobs, icon: TrendingUp, color: "blue" },
+    { title: t.completed, value: liveStats.completedJobs, icon: CheckCircle, color: "emerald" },
+    { title: t.pending, value: liveStats.pendingJobs, icon: Clock, color: "amber" },
+    { title: t.totalEarnings, value: `₹${liveStats.totalEarnings.toLocaleString()}`, icon: IndianRupee, color: "indigo" },
   ];
 
   const filteredLocations = GWALIOR_LOCATIONS.filter((loc) =>
@@ -83,7 +88,7 @@ const ProviderDashboard = () => {
   );
 
   const useCurrentLocation = () => {
-    if (!navigator.geolocation) return toast.error("Geolocation not supported");
+    if (!navigator.geolocation) return toast.error(t.geoNotSupported);
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -91,24 +96,24 @@ const ProviderDashboard = () => {
         const lng = pos.coords.longitude;
         setSelectedLat(lat); setSelectedLng(lng);
         setSearchQuery(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-        toast.success("Location detected");
+        toast.success(t.locationDetected);
         setLocating(false);
       },
-      () => { toast.error("Unable to fetch location"); setLocating(false); }
+      () => { toast.error(t.geoError); setLocating(false); }
     );
   };
 
   const handleUpdateLocation = async () => {
-    if (!selectedLat || !selectedLng) return toast.error("Select a location");
+    if (!selectedLat || !selectedLng) return toast.error(t.selectLocation);
     try {
       setUpdatingLocation(true);
       const { data } = await api.put("/partners/location", { lat: selectedLat, lng: selectedLng });
-      toast.success("Location updated!");
+      toast.success(t.locationUpdated);
       setStoredLocation(data.location);
       setSearchQuery(""); setSelectedLat(null); setSelectedLng(null);
       setIsEditing(false);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update location");
+      toast.error(err.response?.data?.message || t.locationUpdateFailed);
     } finally {
       setUpdatingLocation(false);
     }
@@ -118,8 +123,8 @@ const ProviderDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50 to-blue-100 p-8 space-y-10">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-slate-900">Provider Dashboard</h1>
-          <p className="mt-1 text-slate-600">Track your performance, earnings & ratings in real-time</p>
+          <h1 className="text-4xl font-bold text-slate-900">{t.heading}</h1>
+          <p className="mt-1 text-slate-600">{t.subheading}</p>
         </div>
       </div>
 
@@ -129,7 +134,7 @@ const ProviderDashboard = () => {
         <div className="xl:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-700 p-6 shadow-xl text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-indigo-100 font-medium">Wallet Balance</p>
+              <p className="text-indigo-100 font-medium">{t.walletBalance}</p>
               <h3 className="mt-2 text-4xl font-bold">₹{liveStats.walletBalance.toLocaleString()}</h3>
             </div>
             <div className="rounded-xl p-3 bg-white/20 backdrop-blur">
@@ -138,7 +143,7 @@ const ProviderDashboard = () => {
           </div>
           <div className="mt-6 flex items-center gap-2 text-sm text-indigo-100">
             <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            Live sync with completed jobs
+            {t.liveSync}
           </div>
         </div>
 
@@ -166,11 +171,11 @@ const ProviderDashboard = () => {
         <div className="rounded-2xl bg-white/80 backdrop-blur p-6 shadow-md border border-white flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <MapPin className="text-indigo-600" /> Service Location
+              <MapPin className="text-indigo-600" /> {t.serviceLocation}
             </h3>
             {!isEditing && (
               <button onClick={() => setIsEditing(true)} className="text-xs font-semibold text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition">
-                ✏️ Edit
+                ✏️ {t.edit}
               </button>
             )}
           </div>
@@ -182,14 +187,14 @@ const ProviderDashboard = () => {
                 {storedLocation ? (
                   <div>
                     <p className="text-sm font-semibold text-slate-800">{storedLocation.lat.toFixed(5)}, {storedLocation.lng.toFixed(5)}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Stored coordinates</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{t.storedCoords}</p>
                   </div>
-                ) : <p className="text-sm text-slate-400 italic">No location set</p>}
+                ) : <p className="text-sm text-slate-400 italic">{t.noLocation}</p>}
               </div>
             ) : (
               <div className="space-y-4">
                 <input
-                  type="text" placeholder="Search area (e.g. Hazira)" value={searchQuery}
+                  type="text" placeholder={t.searchArea} value={searchQuery}
                   onChange={(e) => { setSearchQuery(e.target.value); setSelectedLat(null); setSelectedLng(null); setShowSuggestions(true); }}
                   onFocus={() => setShowSuggestions(true)}
                   className="w-full rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -204,11 +209,11 @@ const ProviderDashboard = () => {
                   </ul>
                 )}
                 <button onClick={useCurrentLocation} disabled={locating} className="w-full text-sm font-medium text-indigo-700 bg-indigo-50 py-2 rounded-xl hover:bg-indigo-100 flex items-center justify-center gap-2">
-                  {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin size={16} />} Use Auto-Detect
+                  {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin size={16} />} {t.useAutoDetect}
                 </button>
                 <div className="flex gap-2 pt-2">
-                  <button onClick={() => setIsEditing(false)} className="flex-1 rounded-xl border py-2 text-sm font-semibold hover:bg-slate-50">Cancel</button>
-                  <button onClick={handleUpdateLocation} disabled={updatingLocation || !selectedLat} className="flex-1 rounded-xl bg-indigo-600 text-white py-2 text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50">Save</button>
+                  <button onClick={() => setIsEditing(false)} className="flex-1 rounded-xl border py-2 text-sm font-semibold hover:bg-slate-50">{t.cancel}</button>
+                  <button onClick={handleUpdateLocation} disabled={updatingLocation || !selectedLat} className="flex-1 rounded-xl bg-indigo-600 text-white py-2 text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50">{t.save}</button>
                 </div>
               </div>
             )}
@@ -217,9 +222,9 @@ const ProviderDashboard = () => {
 
         {/* Rating Card */}
         <div className="lg:col-span-2 rounded-2xl bg-gradient-to-br from-yellow-50 to-amber-100 p-6 shadow-md border border-amber-200 flex flex-col justify-center items-center text-center">
-          <p className="text-lg font-medium text-slate-700">Average Rating</p>
+          <p className="text-lg font-medium text-slate-700">{t.avgRating}</p>
           <div className="flex items-end gap-2 my-4">
-            <h3 className="text-6xl font-black text-amber-600">{liveStats.avgRating || "New"}</h3>
+            <h3 className="text-6xl font-black text-amber-600">{liveStats.avgRating || t.new}</h3>
             <span className="text-xl text-amber-500 font-bold mb-1">/ 5</span>
           </div>
           <div className="flex gap-1.5">
@@ -227,7 +232,7 @@ const ProviderDashboard = () => {
               <Star key={i} size={28} className={i <= Math.floor(liveStats.avgRating || 0) ? "text-amber-500 fill-amber-500" : "text-amber-200"} />
             ))}
           </div>
-          <p className="text-sm mt-4 text-amber-700 font-medium">Based on {liveStats.totalJobs} completed jobs</p>
+          <p className="text-sm mt-4 text-amber-700 font-medium">{t.basedOn} {liveStats.totalJobs} {t.completedJobs}</p>
         </div>
       </div>
 
@@ -235,7 +240,7 @@ const ProviderDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Earnings Chart */}
         <div className="lg:col-span-2 rounded-2xl bg-white/80 backdrop-blur p-6 shadow-md border border-white">
-          <h3 className="mb-6 text-lg font-bold text-slate-800">Earnings Trend (Last 6 Months)</h3>
+          <h3 className="mb-6 text-lg font-bold text-slate-800">{t.earningsTrend}</h3>
           {earningsData.length > 0 ? (
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={earningsData}>
@@ -247,13 +252,13 @@ const ProviderDashboard = () => {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[260px] flex items-center justify-center text-slate-400">No earnings data yet</div>
+            <div className="h-[260px] flex items-center justify-center text-slate-400">{t.noEarnings}</div>
           )}
         </div>
 
         {/* Status Pie */}
         <div className="rounded-2xl bg-white/80 backdrop-blur p-6 shadow-md border border-white">
-          <h3 className="mb-4 text-lg font-bold text-slate-800">Job Status</h3>
+          <h3 className="mb-4 text-lg font-bold text-slate-800">{t.jobStatus}</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={90} label={false}>

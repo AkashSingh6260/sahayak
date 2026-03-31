@@ -1,7 +1,10 @@
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, ClipboardList, Sparkles } from "lucide-react";
+import { useLang } from "../../context/LanguageContext.jsx";
+import translations from "../../context/translations.js";
 
 const ProviderSidebar = () => {
+  const { lang } = useLang();
   return (
     <aside className="w-72 bg-white/80 backdrop-blur-xl border-r border-slate-200 shadow-xl">
       {/* Brand */}
@@ -10,7 +13,7 @@ const ProviderSidebar = () => {
           S
         </div>
         <div>
-          <p className="font-semibold text-slate-800">Sahayak</p>
+          <p className="font-semibold text-slate-800">{translations[lang].brand}</p>
           <span className="text-xs text-slate-500">Service Provider</span>
         </div>
       </div>

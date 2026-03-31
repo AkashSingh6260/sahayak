@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { MapPin, Wrench, Loader2, CheckCircle } from "lucide-react";
+import { useLang } from "../context/LanguageContext.jsx";
+import translations from "../context/translations.js";
 
 const dummyProviders = [
   { id: 1, name: "Rohit Sharma", rating: 4.6, distance: "1.2 km" },
@@ -11,6 +13,8 @@ const dummyProviders = [
 const SearchProviders = () => {
   const { state } = useLocation();
   const [loading, setLoading] = useState(true);
+  const { lang } = useLang();
+  const t = translations[lang].search;
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3500);
@@ -37,8 +41,8 @@ const SearchProviders = () => {
 
           <h2 className="text-xl font-semibold mb-2">
             {loading
-              ? "Searching nearby providers..."
-              : "Providers found near you"}
+              ? t.searching
+              : t.found}
           </h2>
 
           <div className="flex justify-center gap-4 text-sm text-gray-600 mb-6">
@@ -67,7 +71,7 @@ const SearchProviders = () => {
                     </p>
                   </div>
                   <button className="text-sm px-3 py-1 rounded-full bg-black text-white">
-                    Request
+                    {t.request}
                   </button>
                 </div>
               ))}

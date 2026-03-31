@@ -25,7 +25,8 @@ export default function useWebSocket(onMessage, enabled = true) {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const ws = new WebSocket(`${WS_URL}?token=${token}`);
+    // Send JWT as a subprotocol to avoid using query parameters
+    const ws = new WebSocket(WS_URL, [token]);
     wsRef.current = ws;
 
     ws.onopen = () => {

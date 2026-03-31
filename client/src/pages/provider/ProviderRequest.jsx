@@ -5,6 +5,8 @@ import {
 import api from "../../config/api.js";
 import useWebSocket from "../../hooks/useWebSocket.js";
 import toast from "react-hot-toast";
+import { useLang } from "../../context/LanguageContext.jsx";
+import translations from "../../context/translations.js";
 
 /* =======================
    DISTANCE UTILITY
@@ -55,6 +57,9 @@ export default function ProviderRequest() {
   const [otpInputs, setOtpInputs] = useState({});
   const [otpSentStatus, setOtpSentStatus] = useState({});
 
+  const { lang } = useLang();
+  const t = translations[lang].providerReq;
+
   const fetchProviderProfile = async () => {
     try {
       const { data } = await api.get("/partners/me");
@@ -87,13 +92,13 @@ export default function ProviderRequest() {
   ======================= */
   const handleWsMessage = useCallback((payload) => {
     if (payload.type === "new_request") {
-      toast("📣 New request near you!", { icon: "🔔", duration: 4000 });
+      toast(t.newRequest, { icon: "🔔", duration: 4000 });
       fetchRequests(); // refresh list
     }
     if (payload.type === "request_cancelled") {
       const cancelledId = payload.data?.requestId?.toString();
       setRequests((prev) => prev.filter((r) => r._id.toString() !== cancelledId));
-      toast("Request was cancelled by customer.", { icon: "❌" });
+      toast(t.requestCancelled, { icon: "❌" });
     }
   }, [fetchRequests]);
 
@@ -119,7 +124,7 @@ export default function ProviderRequest() {
       setRequests((prev) =>
         prev.map((r) => r._id === req._id ? { ...r, status: "assigned" } : r)
       );
-      toast.success("Job accepted! 🎉", {
+      toast.success(t.jobAccepted, {
         style: { background: "#4f46e5", color: "#fff", fontWeight: "600", borderRadius: "12px" },
       });
     } catch (err) {
@@ -132,12 +137,12 @@ export default function ProviderRequest() {
   ======================= */
   const rejectJob = async (req, e) => {
     e.stopPropagation();
-    if (!window.confirm("Skip this request?")) return;
+    if (!window.confirm(t.skipConfirm)) return;
     try {
       await api.patch("/services/reject", { requestId: req._id });
       // Remove from local list only
       setRequests((prev) => prev.filter((r) => r._id !== req._id));
-      toast("Request skipped", { icon: "👋" });
+      toast(t.requestSkipped, { icon: "👋" });
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to skip");
     }
@@ -148,10 +153,10 @@ export default function ProviderRequest() {
   ======================= */
   const triggerSendOTP = async (reqId, e) => {
     e.stopPropagation();
-    const tid = toast.loading("Sending OTP to customer's email...");
+    const tid = toast.loading(t.otpSending);
     try {
       await api.patch("/services/send-otp", { requestId: reqId });
-      toast.success("OTP sent to registered email! 📧", { id: tid });
+      toast.success(t.otpSent, { id: tid });
       setOtpSentStatus((prev) => ({ ...prev, [reqId]: true }));
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to send OTP", { id: tid });
@@ -164,7 +169,7 @@ export default function ProviderRequest() {
   const startJob = async (req, e) => {
     e.stopPropagation();
     const otp = otpInputs[req._id];
-    if (!otp || otp.length < 6) return toast.error("Enter a valid 6-digit OTP");
+    if (!otp || otp.length < 6) return toast.error(t.otpInvalid);
     try {
       await api.patch("/services/start", { requestId: req._id, otp });
       setRequests((prev) =>
@@ -172,7 +177,7 @@ export default function ProviderRequest() {
           r._id === req._id ? { ...r, status: "in_progress", startTime: new Date() } : r
         )
       );
-      toast.success("OTP Verified! Timer started. ⏱️");
+      toast.success(t.otpVerified);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to start job");
     }
@@ -188,7 +193,7 @@ export default function ProviderRequest() {
       setRequests((prev) =>
         prev.map((r) => r._id === req._id ? { ...r, status: "completed" } : r)
       );
-      toast.success("Job marked complete! Payment request sent to customer. 🎉");
+      toast.success(t.jobComplete);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to complete job");
     }
@@ -197,16 +202,16 @@ export default function ProviderRequest() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50 to-blue-100 p-8">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-4xl font-bold text-slate-900">Service Requests</h1>
+        <h1 className="text-4xl font-bold text-slate-900">{t.heading}</h1>
       </div>
-      <p className="text-slate-600 mb-8">Nearby jobs available for you — updates arrive live</p>
+      <p className="text-slate-600 mb-8">{t.subheading}</p>
 
-      {loading && <p className="text-slate-500">Loading requests...</p>}
+      {loading && <p className="text-slate-500">{t.loading}</p>}
       {!loading && uniqueRequests.length === 0 && (
         <div className="text-center py-20 text-slate-400">
           <p className="text-5xl mb-4">📭</p>
-          <p className="text-lg font-medium">No requests nearby right now</p>
-          <p className="text-sm mt-1">New requests will appear automatically</p>
+          <p className="text-lg font-medium">{t.noRequests}</p>
+          <p className="text-sm mt-1">{t.appearAuto}</p>
         </div>
       )}
 
@@ -240,7 +245,7 @@ export default function ProviderRequest() {
               <div className="mt-4 flex items-center justify-between text-sm">
                 {typeof distance === "number" && (
                   <span className="text-indigo-600 font-medium flex items-center gap-1">
-                    <MapPin size={14} /> {distance} km away
+                    <MapPin size={14} /> {distance} {t.away}
                   </span>
                 )}
                 {req.status === "in_progress" && req.startTime && (
@@ -252,7 +257,7 @@ export default function ProviderRequest() {
               {req.status === "open" && req.expiresAt && (
                 <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                   <Clock size={12} />
-                  Expires: {new Date(req.expiresAt).toLocaleTimeString()}
+                  {t.expires} {new Date(req.expiresAt).toLocaleTimeString()}
                 </p>
               )}
 
@@ -265,7 +270,7 @@ export default function ProviderRequest() {
                         onClick={(e) => acceptJob(req, e)}
                         className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white py-2.5 font-semibold hover:bg-indigo-700 transition"
                       >
-                        <CheckCircle size={16} /> Accept
+                        <CheckCircle size={16} /> {t.accept}
                       </button>
                       <button
                         onClick={(e) => rejectJob(req, e)}
@@ -285,14 +290,14 @@ export default function ProviderRequest() {
                           onClick={(e) => triggerSendOTP(req._id, e)}
                           className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 text-white py-2.5 font-semibold hover:bg-orange-600 transition"
                         >
-                          📧 Send OTP to Customer
+                          📧 {t.sendOtp}
                         </button>
                       ) : (
                         <div className="flex-1 flex flex-col gap-2">
                           <div className="flex items-center gap-2">
                             <input
                               type="text"
-                              placeholder="Enter OTP"
+                              placeholder={t.enterOtp}
                               maxLength={6}
                               value={otpInputs[req._id] || ""}
                               onClick={(e) => e.stopPropagation()}
@@ -303,14 +308,14 @@ export default function ProviderRequest() {
                               onClick={(e) => startJob(req, e)}
                               className="w-1/2 flex items-center justify-center gap-1 rounded-xl bg-emerald-600 text-white py-2.5 text-sm font-semibold hover:bg-emerald-700 transition"
                             >
-                              <Play size={14} /> Verify & Start
+                              <Play size={14} /> {t.verifyStart}
                             </button>
                           </div>
                           <button
                             onClick={(e) => triggerSendOTP(req._id, e)}
                             className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider hover:text-indigo-800 text-left px-1"
                           >
-                            Resend OTP
+                            {t.resendOtp}
                           </button>
                         </div>
                       )}
@@ -323,7 +328,7 @@ export default function ProviderRequest() {
                       onClick={(e) => completeJob(req, e)}
                       className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-rose-600 text-white py-2.5 font-semibold hover:bg-rose-700 transition"
                     >
-                      🟥 End Job
+                      🟥 {t.endJob}
                     </button>
                   )}
 

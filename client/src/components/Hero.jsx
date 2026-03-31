@@ -1,9 +1,14 @@
 import React from "react";
-import { professions } from "./Professions.jsx";
+import { professions as professionData } from "./Professions.jsx";
 import { useNavigate } from "react-router-dom";
+import { useLang } from "../context/LanguageContext.jsx";
+import translations from "../context/translations.js";
 
 const Hero = () => {
   const navigate = useNavigate();
+  const { lang } = useLang();
+  const t = translations[lang].hero;
+  const tProf = translations[lang].professions;
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-20">
@@ -11,29 +16,30 @@ const Hero = () => {
       {/* ================= Heading ================= */}
       <div className="mb-14 text-center">
         <span className="inline-block rounded-full bg-indigo-100 px-4 py-1 text-sm font-medium text-indigo-700">
-          Explore Services
+          {t.badge}
         </span>
 
         <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900">
-          Services at <span className="text-indigo-600">Sahayak</span>
+          {t.heading}{t.headingHighlight && <> <span className="text-indigo-600">{t.headingHighlight}</span></>}
         </h1>
 
         <p className="mt-3 text-slate-500">
-          Choose a service and get connected with verified professionals
+          {t.subheading}
         </p>
       </div>
 
       {/* ================= Service Cards ================= */}
       <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-        {professions.map((professions) => {
-          const Icon = professions.icon;
+        {professionData.map((profession) => {
+          const Icon = profession.icon;
+          const localised = tProf[profession.id] || {};
 
           return (
             <div
-              key={professions.id}
+              key={profession.id}
               onClick={() =>
-                navigate(`/request/${professions.id}`, {
-                  state: { serviceType: professions.id },
+                navigate(`/request/${profession.id}`, {
+                  state: { serviceType: profession.id },
                 })
               }
               className="
@@ -59,12 +65,12 @@ const Hero = () => {
 
               {/* Title */}
               <h3 className="mt-4 text-lg font-semibold text-slate-900">
-                {professions.label}
+                {localised.label || profession.label}
               </h3>
 
               {/* Description */}
               <p className="mt-1 text-sm text-slate-500 leading-relaxed">
-                {professions.description}
+                {localised.description || profession.description}
               </p>
             </div>
           );

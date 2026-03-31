@@ -86,7 +86,7 @@ export const createServiceRequest = async (req, res) => {
     const nearbyPartners = partners.filter((p) => {
       if (!p.location?.lat || !p.location?.lng) return false;
       const distance = getDistanceInKm(p.location.lat, p.location.lng, location.lat, location.lng);
-      return distance <= 5;
+      return distance <= 25; // Broadcast to partners within 25km
     });
 
     // Save DB notifications

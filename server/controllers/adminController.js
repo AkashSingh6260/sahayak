@@ -106,7 +106,8 @@ export const adminDashboardStats = async (req, res) => {
     const rejected = await Partner.countDocuments({ status: "rejected" });
 
     const paidRequests = await ServiceRequest.find({ "billing.paymentStatus": "paid" });
-    const totalPlatformRevenue = paidRequests.reduce((sum, req) => sum + (req.billing?.platformFee || 0), 0);
+    const totalPlatformRevenue = paidRequests.reduce((sum, req) => 
+      sum + (req.billing?.platformFee || Math.round((req.billing?.totalAmount || 0) * 0.20)), 0);
     const totalBusinessVolume = paidRequests.reduce((sum, req) => sum + (req.billing?.totalAmount || 0), 0);
 
     // Monthly revenue breakdown (last 6 months)
@@ -121,7 +122,7 @@ export const adminDashboardStats = async (req, res) => {
       const d = new Date(r.billing.billedAt || r.updatedAt);
       const key = monthNames[d.getMonth()];
       if (revenueByMonth.hasOwnProperty(key)) {
-        revenueByMonth[key] += r.billing?.platformFee || 0;
+        revenueByMonth[key] += r.billing?.platformFee || Math.round((r.billing?.totalAmount || 0) * 0.20);
       }
     });
     const revenueData = Object.entries(revenueByMonth).map(([month, revenue]) => ({ month, revenue }));

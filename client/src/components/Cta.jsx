@@ -1,8 +1,12 @@
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useLang } from "../context/LanguageContext.jsx";
+import translations from "../context/translations.js";
 
 const Cta = () => {
   const navigate = useNavigate();
+  const { lang } = useLang();
+  const t = translations[lang].cta;
 
   return (
     <section className="relative py-24 overflow-hidden">
@@ -16,13 +20,11 @@ const Cta = () => {
       {/* Content */}
       <div className="relative max-w-5xl mx-auto px-4 text-center text-white">
         <h2 className="text-4xl md:text-5xl font-bold mb-5 tracking-tight">
-          Are You a Service Professional?
+          {t.heading}
         </h2>
 
         <p className="text-indigo-100/90 max-w-2xl mx-auto mb-10 text-lg leading-relaxed">
-          Join <span className="font-semibold text-white">Sahayak</span> and
-          connect with thousands of customers looking for trusted professionals
-          like you.
+          {t.subheading}
         </p>
 
         <button
@@ -37,7 +39,7 @@ const Cta = () => {
             transition-all duration-300
           "
         >
-          Partner with Sahayak
+          {t.button}
           <ArrowRight
             size={18}
             className="transition-transform group-hover:translate-x-1"

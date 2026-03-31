@@ -12,12 +12,22 @@ let wss = null;
    Call once with the http.Server instance
 ====================== */
 export function initWSS(httpServer) {
-  wss = new WebSocketServer({ server: httpServer });
+  wss = new WebSocketServer({ 
+    server: httpServer,
+    handleProtocols: (protocols, req) => {
+      // Pick the first protocol which should be our JWT
+      return protocols.values().next().value || false;
+    }
+  });
 
   wss.on("connection", (ws, req) => {
-    // Parse JWT from query string: ws://localhost:3000?token=<jwt>
-    const { query } = parse(req.url, true);
-    const token = query.token;
+    // Parse JWT from sec-websocket-protocol header
+    let token = null;
+    const protocolHeader = req.headers['sec-websocket-protocol'];
+    if (protocolHeader) {
+      // It might be a comma-separated list of protocols
+      token = protocolHeader.split(',')[0].trim();
+    }
 
     if (!token) {
       ws.close(1008, "Missing token");

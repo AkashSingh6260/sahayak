@@ -4,6 +4,7 @@ import {
   Star,
   LogOut,
   Bell,
+  Languages,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,6 +13,8 @@ import { logout } from "../app/features/authSlice.js";
 import api from "../config/api";
 import useWebSocket from "../hooks/useWebSocket.js";
 import toast from "react-hot-toast";
+import { useLang } from "../context/LanguageContext.jsx";
+import translations from "../context/translations.js";
 
 const Navbar = () => {
   const [profileOpen, setProfileOpen] = useState(false);
@@ -25,6 +28,10 @@ const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+
+  const { lang, toggleLang } = useLang();
+  const t = translations[lang].nav;
+  const tLang = translations[lang].langToggle;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -79,7 +86,6 @@ const Navbar = () => {
       setBellPulse(true);
       setTimeout(() => setBellPulse(false), 3000);
 
-      // Show toast for system notifications (not billing_ready — MainLayout handles that)
       if (payload.type !== "billing_ready") {
         toast(payload.message, {
           icon: payload.type === "request_accepted" ? "✅" :
@@ -124,28 +130,39 @@ const Navbar = () => {
           {user?.role === "service_provider" ? (
             <Link to="/pro-requests" className="flex items-center gap-2 hover:text-black transition">
               <ClipboardList size={18} />
-              Requests
+              {t.requests}
             </Link>
           ) : (
             <Link to="/partner" className="flex items-center gap-2 hover:text-black transition">
               <HeartHandshakeIcon size={18} />
-              Partner with Sahayak
+              {t.partnerWithSahayak}
             </Link>
           )}
         </div>
 
         {/* Right */}
         <div className="hidden md:flex items-center gap-3">
+
+          {/* Language Toggle */}
+          <button
+            onClick={toggleLang}
+            title={`Switch to ${tLang.switchTo}`}
+            className="flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-black/5 transition"
+          >
+            <Languages size={14} />
+            {tLang.switchTo}
+          </button>
+
           {!user ? (
             <>
               <Link to="/register">
                 <button className="rounded-full border border-black/20 px-4 py-2 text-gray-700 hover:bg-black/5 transition">
-                  Register
+                  {t.register}
                 </button>
               </Link>
               <Link to="/login">
                 <button className="rounded-full bg-indigo-600 text-white px-4 py-2 hover:bg-indigo-700 transition">
-                  Login
+                  {t.login}
                 </button>
               </Link>
             </>
@@ -156,7 +173,7 @@ const Navbar = () => {
                 onClick={() => setProfileOpen(!profileOpen)}
                 className="flex items-center gap-3 px-3 py-1 rounded-full hover:bg-black/5 transition"
               >
-                <span className="text-gray-800">Hi, <strong>{user.name}</strong></span>
+                <span className="text-gray-800">{t.hi} <strong>{user.name}</strong></span>
                 <img
                   src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=200"
                   className="w-8 h-8 rounded-full"
@@ -192,16 +209,16 @@ const Navbar = () => {
                 {showNotifications && (
                   <div className="absolute right-0 mt-4 w-96 rounded-3xl bg-white/95 backdrop-blur-2xl border border-black/10 shadow-[0_30px_60px_rgba(0,0,0,0.2)] overflow-hidden z-50">
                     <div className="px-5 py-4 border-b border-black/10 flex justify-between items-center">
-                      <h3 className="font-semibold text-gray-900">Notifications</h3>
+                      <h3 className="font-semibold text-gray-900">{t.notifications}</h3>
                       {notifications.length > 0 && (
                         <button onClick={markAllRead} className="text-xs text-indigo-600 hover:underline">
-                          Mark all read
+                          {t.markAllRead}
                         </button>
                       )}
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                       {notifications.length === 0 ? (
-                        <div className="py-10 text-center text-gray-500">No notifications yet</div>
+                        <div className="py-10 text-center text-gray-500">{t.noNotifications}</div>
                       ) : (
                         notifications.slice(0, 20).map((n) => (
                           <div
@@ -228,26 +245,26 @@ const Navbar = () => {
                   <div className="px-4 py-3 border-b border-black/10">
                     <p className="font-semibold text-gray-900">{user.name}</p>
                     <p className="text-xs text-gray-500">{user.email}</p>
-                    <p className="text-xs text-indigo-600 font-medium capitalize mt-0.5">{user.role}</p>
+                    <p className="text-xs text-indigo-600 font-medium capitalize mt-0.5">{translations[lang].roles?.[user.role] || user.role}</p>
                   </div>
                   <Link to="/my-requests" className="flex gap-3 px-4 py-2 hover:bg-black/5 transition">
-                    <ClipboardList size={16} /> My Requests
+                    <ClipboardList size={16} /> {t.myRequests}
                   </Link>
                   {user.role === "service_provider" && (
                     <Link to="/provider/dashboard" className="flex gap-3 px-4 py-2 hover:bg-black/5 transition">
-                      <Star size={16} /> Dashboard
+                      <Star size={16} /> {t.dashboard}
                     </Link>
                   )}
                   {user.role === "admin" && (
                     <Link to="/admin/dashboard" className="flex gap-3 px-4 py-2 hover:bg-black/5 transition">
-                      <Star size={16} /> Admin Panel
+                      <Star size={16} /> {t.adminPanel}
                     </Link>
                   )}
                   <button
                     onClick={handleLogout}
                     className="flex gap-3 px-4 py-2 text-red-500 w-full hover:bg-red-50 transition"
                   >
-                    <LogOut size={16} /> Logout
+                    <LogOut size={16} /> {t.logout}
                   </button>
                 </div>
               )}

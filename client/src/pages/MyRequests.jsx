@@ -18,50 +18,44 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import useWebSocket from "../hooks/useWebSocket.js";
+import { useLang } from "../context/LanguageContext.jsx";
+import translations from "../context/translations.js";
 
 const statusStyles = {
   pending: {
-    label: "Pending",
     badge: "bg-yellow-100 text-yellow-700 border-yellow-200",
     accent: "border-l-yellow-400",
     icon: <Clock size={14} className="text-yellow-600" />,
   },
   open: {
-    label: "Pending",
     badge: "bg-yellow-100 text-yellow-700 border-yellow-200",
     accent: "border-l-yellow-400",
     icon: <Clock size={14} className="text-yellow-600" />,
   },
   accepted: {
-    label: "Accepted",
     badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
     accent: "border-l-emerald-400",
     icon: <CheckCircle size={14} className="text-emerald-600" />,
   },
   assigned: {
-    label: "Accepted",
     badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
     accent: "border-l-emerald-400",
     icon: <CheckCircle size={14} className="text-emerald-600" />,
   },
   in_progress: {
-    label: "In Progress",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
     accent: "border-l-blue-400",
     icon: <Clock size={14} className="animate-spin text-blue-600" />,
   },
   completed: {
-    label: "Completed",
     badge: "bg-slate-100 text-slate-700 border-slate-200",
     accent: "border-l-slate-400",
     icon: <CheckCircle size={14} className="text-slate-600" />,
   },
   rejected: {
-    label: "Rejected",
     badge: "bg-rose-100 text-rose-700 border-rose-200",
     accent: "border-l-rose-400 font-bold",
     icon: <XCircle size={14} className="text-rose-600" />,
-    message: "Request rejected, please try another service provider."
   },
 };
 
@@ -74,6 +68,11 @@ const MyRequests = () => {
   const [hoverRating, setHoverRating] = useState(0);
   const [review, setReview] = useState("");
 
+  const { lang } = useLang();
+  const t = translations[lang].myRequests;
+  const tB = translations[lang].billing;
+  const tProf = translations[lang].professions;
+
   const REQUESTS_URL = "http://localhost:3000/api/requests";
   const SERVICES_URL = "http://localhost:3000/api/services";
   const token = localStorage.getItem("token");
@@ -85,7 +84,7 @@ const MyRequests = () => {
       });
       setRequests(res.data || []);
     } catch {
-      toast.error("Failed to fetch requests");
+      toast.error(t.fetchFailed);
     } finally {
       setLoading(false);
     }
@@ -102,20 +101,20 @@ const MyRequests = () => {
   }, []);
 
   const deleteRequest = async (id) => {
-    if (!window.confirm("Delete this request?")) return;
+    if (!window.confirm(t.deleteConfirm)) return;
     try {
       await axios.delete(`${REQUESTS_URL}/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRequests((prev) => prev.filter((r) => r._id !== id));
-      toast.success("Request deleted");
+      toast.success(t.deleteSuccess);
     } catch {
-      toast.error("Delete failed");
+      toast.error(t.deleteFailed);
     }
   };
 
   const submitRating = async () => {
-    if (!rating) return toast.error("Please select a rating");
+    if (!rating) return toast.error(t.selectRating);
     try {
       // ✅ Fixed: correct endpoint is /api/services/rating
       await axios.post(
@@ -127,7 +126,7 @@ const MyRequests = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success("Thanks for rating 🙌");
+      toast.success(t.ratingThanks);
       setSelectedRequest(null);
       setRating(0);
       setReview("");
@@ -155,7 +154,7 @@ const MyRequests = () => {
         description: "Service Payment",
         order_id: order.id,
         handler: async (response) => {
-          const tid = toast.loading("Verifying payment...");
+          const tid = toast.loading(tB.verifyingPayment);
           try {
             // 3. Verify payment on backend
             const verifyRes = await axios.post(
@@ -168,11 +167,11 @@ const MyRequests = () => {
             );
 
             if (verifyRes.data.success) {
-              toast.success("Payment Successful! 🎉", { id: tid });
+              toast.success(tB.paymentSuccess, { id: tid });
               fetchRequests(); // Refresh list to unlock rating
             }
           } catch (err) {
-            toast.error("Payment verification failed", { id: tid });
+            toast.error(tB.paymentVerifyFailed, { id: tid });
           }
         },
         prefill: {
@@ -185,7 +184,7 @@ const MyRequests = () => {
         },
         modal: {
           ondismiss: function () {
-            toast.error("Payment was cancelled or closed.");
+            toast.error(t.paymentCancelled);
           }
         }
       };
@@ -230,8 +229,8 @@ const MyRequests = () => {
 
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">My Service Requests</h2>
-          <p className="text-slate-500 mt-2">Track your current bookings and rate your service providers.</p>
+          <h2 className="text-3xl font-bold text-slate-900">{t.heading}</h2>
+          <p className="text-slate-500 mt-2">{t.subheading}</p>
         </div>
 
         {uniqueRequests.length === 0 ? (
@@ -239,7 +238,7 @@ const MyRequests = () => {
             <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <FileText className="text-slate-400" />
             </div>
-            <p className="text-slate-600 font-medium">No requests found.</p>
+            <p className="text-slate-600 font-medium">{t.noRequests}</p>
           </div>
         ) : (
           <div className="grid gap-6">
@@ -264,7 +263,7 @@ const MyRequests = () => {
                       </div>
                       <div>
                         <h3 className="text-xl font-bold capitalize text-slate-800">
-                          {req.serviceType?.replace("_", " ") || "Service Request"}
+                          {tProf[req.serviceType]?.label || req.serviceType?.replace("_", " ") || "Service"}
                         </h3>
                         <div className="flex items-center gap-3 mt-1">
                           <p className="text-xs text-slate-500 flex items-center gap-1">
@@ -273,7 +272,7 @@ const MyRequests = () => {
                           </p>
                           <span className="text-slate-300">|</span>
                           <span className="text-xs text-indigo-600 font-medium flex items-center gap-1">
-                            <MapPin size={13} /> Service Location
+                            <MapPin size={13} /> {t.serviceLocation}
                           </span>
                         </div>
                       </div>
@@ -281,18 +280,18 @@ const MyRequests = () => {
 
                     <span className={`flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full border ${status.badge}`}>
                       {status.icon}
-                      {status.label.toUpperCase()}
+                      {(t.status[req.status] || req.status)?.toUpperCase()}
                     </span>
                   </div>
 
                   <div className="mt-6 bg-slate-50 p-4 rounded-xl">
                     <p className="text-sm text-slate-600 leading-relaxed">
-                      <span className="font-bold text-slate-400 block text-[10px] uppercase tracking-wider mb-1">Issue Reported:</span>
-                      {req.problemDescription || "No description provided."}
+                      <span className="font-bold text-slate-400 block text-[10px] uppercase tracking-wider mb-1">{t.issueReported}</span>
+                      {req.problemDescription || t.noDescription}
                     </p>
                     {req.status === "rejected" && (
                       <p className="mt-3 text-xs font-bold text-rose-600 bg-rose-50 px-3 py-2 rounded-lg border border-rose-100 flex items-center gap-2">
-                        <XCircle size={14} /> Request rejected, please try another service provider.
+                        <XCircle size={14} /> {t.rejectedMessage}
                       </p>
                     )}
                   </div>
@@ -307,10 +306,10 @@ const MyRequests = () => {
                             {req.assignedPartner?.fullName?.[0] || <User size={20} />}
                           </div>
                           <div>
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Assigned Partner</p>
-                            <p className="text-sm font-bold text-slate-800">{req.assignedPartner?.fullName || "Professional"}</p>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{t.assignedPartner}</p>
+                            <p className="text-sm font-bold text-slate-800">{req.assignedPartner?.fullName || t.professional}</p>
                             <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                              <Phone size={10} /> {req.assignedPartner?.phone || "Contact hidden"}
+                              <Phone size={10} /> {req.assignedPartner?.phone || t.contactHidden}
                             </p>
                           </div>
                         </div>
@@ -320,7 +319,7 @@ const MyRequests = () => {
                             <Star size={14} fill="currentColor" />
                             {req.assignedPartner?.averageRating?.toFixed(1) || "5.0"}
                           </div>
-                          <p className="text-[9px] text-yellow-700 font-medium mt-0.5">SCORE</p>
+                          <p className="text-[9px] text-yellow-700 font-medium mt-0.5">{t.score}</p>
                         </div>
                       </div>
                     </div>
@@ -330,8 +329,8 @@ const MyRequests = () => {
                   {req.status === "assigned" && req.otp && (
                     <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Share this OTP to start work</p>
-                        <p className="text-sm text-indigo-700">Give this to the professional when they arrive.</p>
+                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">{t.shareOtp}</p>
+                        <p className="text-sm text-indigo-700">{t.giveOtp}</p>
                       </div>
                       <div className="bg-white px-5 py-2 rounded-lg shadow-sm font-mono text-xl font-bold tracking-[0.2em] text-indigo-600 border border-indigo-200">
                         {req.otp}
@@ -345,26 +344,26 @@ const MyRequests = () => {
                       <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
                         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                           <div className="flex items-center gap-2 text-slate-800 font-bold">
-                            <FileCheck size={18} className="text-emerald-500" /> Final Invoice
+                            <FileCheck size={18} className="text-emerald-500" /> {t.finalInvoice}
                           </div>
                           {req.billing.paymentStatus === "paid" && (
                             <div className="text-xs font-bold text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
-                              PAID
+                              {t.paid}
                             </div>
                           )}
                         </div>
 
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between text-slate-600 text-xs">
-                            <span>Service Charge</span>
+                            <span>{tB.serviceCharge}</span>
                             <span className="font-medium text-slate-800">₹{req.billing.workCharge || 0}</span>
                           </div>
                           <div className="flex justify-between text-slate-600 text-xs">
-                            <span className="flex items-center gap-1"><MapPin size={12} /> Distance Charge</span>
+                            <span className="flex items-center gap-1"><MapPin size={12} /> {tB.distanceCharge}</span>
                             <span className="font-medium text-slate-800">₹{req.billing.baseCharge || 0}</span>
                           </div>
                           <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between font-bold text-lg text-slate-900 border-dashed">
-                            <span>Total Amount</span>
+                            <span>{tB.total}</span>
                             <span>₹{req.billing.totalAmount || 0}</span>
                           </div>
                         </div>
@@ -374,7 +373,7 @@ const MyRequests = () => {
                             onClick={(e) => { e.stopPropagation(); handlePay(req._id); }}
                             className="mt-5 w-full bg-slate-900 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition shadow-lg shadow-slate-900/20"
                           >
-                            <CreditCard size={18} /> Pay ₹{req.billing.totalAmount} Now
+                            <CreditCard size={18} /> {tB.payNow} ₹{req.billing.totalAmount} {tB.now}
                           </button>
                         )}
                       </div>
@@ -384,7 +383,7 @@ const MyRequests = () => {
                   <div className="mt-6 flex items-center justify-between">
                     {alreadyRated ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-500">Your Rating:</span>
+                        <span className="text-xs font-bold text-slate-500">{t.yourRating}</span>
                         <div className="flex items-center gap-0.5">
                           {[1, 2, 3, 4, 5].map(s => (
                             <Star
@@ -401,11 +400,11 @@ const MyRequests = () => {
                       </div>
                     ) : canRate ? (
                       <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                        <Star size={14} className="animate-pulse" /> Click card to rate provider
+                        <Star size={14} className="animate-pulse" /> {t.clickToRate}
                       </span>
                     ) : isAccepted ? (
                       <p className="text-[11px] font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
-                        Complete payment to unlock rating
+                        {t.completePaymentToRate}
                       </p>
                     ) : (
                       <button
@@ -415,7 +414,7 @@ const MyRequests = () => {
                         }}
                         className="text-rose-500 text-xs font-bold flex items-center gap-1.5 hover:text-rose-700 transition"
                       >
-                        <Trash2 size={14} /> CANCEL REQUEST
+                        <Trash2 size={14} /> {t.cancelRequest}
                       </button>
                     )}
                   </div>
@@ -434,9 +433,9 @@ const MyRequests = () => {
               <div className="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Star size={32} fill="currentColor" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-800">Service Rating</h3>
+              <h3 className="text-2xl font-bold text-slate-800">{t.serviceRating}</h3>
               <p className="text-sm text-slate-500 mt-1">
-                How was your experience with <span className="font-bold text-slate-700">{selectedRequest.assignedPartner?.fullName || "the professional"}</span>?
+                {t.howWasExperience} <span className="font-bold text-slate-700">{selectedRequest.assignedPartner?.fullName || "the professional"}</span>?
               </p>
             </div>
 
@@ -472,13 +471,13 @@ const MyRequests = () => {
                 onClick={() => setSelectedRequest(null)}
                 className="py-3 px-4 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition"
               >
-                Skip
+                {t.skip}
               </button>
               <button
                 onClick={submitRating}
                 className="py-3 px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition"
               >
-                Submit
+                {t.submit}
               </button>
             </div>
           </div>
