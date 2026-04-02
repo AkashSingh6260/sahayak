@@ -28,19 +28,25 @@ const MainLayout = () => {
         setShowBillingModal(false);
       }
     } catch (err) {
+      if (err.response?.status === 401) return;
       console.error("Failed to fetch pending billing", err);
     }
   }, []);
 
   useEffect(() => {
-    fetchPendingBilling(); // initial check on mount
+    if (!user) {
+      setPendingBilling([]);
+      setShowBillingModal(false);
+      return;
+    }
+    fetchPendingBilling();
+  }, [user, fetchPendingBilling]);
 
-    // Load Razorpay script
+  useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
     document.body.appendChild(script);
-
     return () => {
       document.body.removeChild(script);
     };

@@ -50,6 +50,12 @@ const translations = {
     testimonials: {
       heading: "Loved by Our Customers",
       subheading: "Real experiences from people who used Sahayak",
+      trustedBadge: "Trusted experiences",
+      trustedHeading: "Trusted by thousands of customers",
+      trustedSubheading: "Zooming spotlight reviews with smooth transitions — just like real product websites.",
+      trustedByPrefix: "Trusted by",
+      trustedBySuffix: "Users",
+      logoSubheading: "Trusted services, verified partners.",
       items: [
         { name: "Ankit Verma", role: "Home Owner", message: "Found an electrician within minutes. The professional was verified and very skilled. Highly recommended!" },
         { name: "Pooja Sharma", role: "Apartment Resident", message: "Smooth experience from start to finish. The plumber arrived on time and fixed the issue quickly." },
@@ -386,6 +392,12 @@ const translations = {
     testimonials: {
       heading: "हमारे ग्राहकों का प्यार",
       subheading: "उन लोगों के असली अनुभव जिन्होंने सहायक का उपयोग किया",
+      trustedBadge: "विश्वसनीय अनुभव",
+      trustedHeading: "हजारों ग्राहकों का भरोसा",
+      trustedSubheading: "स्मूद ट्रांज़िशन के साथ ज़ूमिंग रिव्यू — बिल्कुल असली वेबसाइट जैसा।",
+      trustedByPrefix: "भरोसा",
+      trustedBySuffix: "यूज़र्स",
+      logoSubheading: "विश्वसनीय सेवाएं, सत्यापित पार्टनर।",
       items: [
         { name: "अंकित वर्मा", role: "गृहस्वामी", message: "मिनटों में इलेक्ट्रीशियन मिला। पेशेवर सत्यापित और बहुत कुशल था। अत्यधिक अनुशंसित!" },
         { name: "पूजा शर्मा", role: "अपार्टमेंट निवासी", message: "शुरू से अंत तक सहज अनुभव। प्लम्बर समय पर आया और समस्या जल्दी ठीक कर दी।" },

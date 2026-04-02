@@ -1,6 +1,7 @@
 import User from "../modal/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 /* ===============================
    ADMIN EMAIL
@@ -22,6 +23,15 @@ const generateToken = (userId) => {
 ================================ */
 export const register = async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        message: "Database unavailable. Check MONGODB_URI and server logs.",
+      });
+    }
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: "Server misconfiguration (JWT_SECRET)." });
+    }
+
     const { name, email, password } = req.body;
 
     // Validation
@@ -71,6 +81,15 @@ export const register = async (req, res) => {
 ================================ */
 export const loginUser = async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        message: "Database unavailable. Check MONGODB_URI and server logs.",
+      });
+    }
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: "Server misconfiguration (JWT_SECRET)." });
+    }
+
     const { email, password } = req.body;
 
     // Validation
