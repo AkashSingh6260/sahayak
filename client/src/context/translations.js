@@ -35,6 +35,12 @@ const translations = {
         { title: "Describe Your Problem", desc: "Explain the issue and share your location" },
         { title: "Get Connected", desc: "Verified professionals will contact you shortly" },
       ],
+      values: [
+        { text: "Fast Response", icon: "⚡" },
+        { text: "Verified Pro", icon: "🛡️" },
+        { text: "Secure Payment", icon: "🔒" }
+      ],
+      stepBadges: ["Quick Process", "Reliable Support", "Track Real-time"]
     },
     whyChooseUs: {
       heading: "Services at",
@@ -377,6 +383,12 @@ const translations = {
         { title: "समस्या बताएं", desc: "समस्या बताएं और अपना स्थान साझा करें" },
         { title: "जुड़ें", desc: "सत्यापित पेशेवर जल्द ही आपसे संपर्क करेंगे" },
       ],
+      values: [
+        { text: "त्वरित प्रतिक्रिया", icon: "⚡" },
+        { text: "सत्यापित पेशेवर", icon: "🛡️" },
+        { text: "सुरक्षित भुगतान", icon: "🔒" }
+      ],
+      stepBadges: ["त्वरित प्रक्रिया", "विश्वसनीय समर्थन", "रीयल-टाइम ट्रैक करें"]
     },
     whyChooseUs: {
       heading: "सहायक पर सेवाएं",
