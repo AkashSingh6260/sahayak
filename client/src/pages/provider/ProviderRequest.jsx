@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   MapPin, FileText, CheckCircle, X, Navigation, Clock, Play
 } from "lucide-react";
@@ -56,6 +56,53 @@ export default function ProviderRequest() {
   const [mapLocation, setMapLocation] = useState(null);
   const [otpInputs, setOtpInputs] = useState({});
   const [otpSentStatus, setOtpSentStatus] = useState({});
+  const [reportingFake, setReportingFake] = useState({});
+
+  /* =======================
+     AUDIO — Unlock on first user gesture to bypass browser autoplay policy
+  ======================= */
+  const alarmRef = useRef(null);
+  const audioUnlocked = useRef(false);
+
+  useEffect(() => {
+    // Create the Audio object once, pointing at /alarm.mp3 in public folder
+    alarmRef.current = new Audio("/alarm.mp3");
+    alarmRef.current.preload = "auto";
+
+    const unlock = () => {
+      if (audioUnlocked.current) return;
+      // Play silently (volume 0) to satisfy browser autoplay policy
+      alarmRef.current.volume = 0;
+      alarmRef.current.play()
+        .then(() => {
+          alarmRef.current.pause();
+          alarmRef.current.currentTime = 0;
+          alarmRef.current.volume = 1; // restore full volume
+          audioUnlocked.current = true;
+          console.log("🔊 Audio context unlocked");
+        })
+        .catch(() => {}); // ignore if it still fails
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("keydown", unlock);
+    };
+
+    document.addEventListener("click", unlock, { once: true });
+    document.addEventListener("keydown", unlock, { once: true });
+
+    return () => {
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("keydown", unlock);
+    };
+  }, []);
+
+  const playAlarm = useCallback(() => {
+    if (!alarmRef.current) return;
+    alarmRef.current.currentTime = 0;
+    alarmRef.current.volume = 1;
+    alarmRef.current.play().catch((err) => {
+      console.warn("Alarm play blocked (user hasn't interacted yet):", err.message);
+    });
+  }, []);
 
   const { lang } = useLang();
   const t = translations[lang].providerReq;
@@ -99,6 +146,26 @@ export default function ProviderRequest() {
       const cancelledId = payload.data?.requestId?.toString();
       setRequests((prev) => prev.filter((r) => r._id.toString() !== cancelledId));
       toast(t.requestCancelled, { icon: "❌" });
+    }
+    if (payload.type === "sos_request_alert") {
+      // Play alarm via pre-unlocked audio ref
+      playAlarm();
+
+      // Fire a sticky, highly visible red toast
+      toast.error(
+        `🚨 URGENT SOS: ${payload.message}`,
+        {
+          duration: 15000,
+          style: {
+            background: "#dc2626",
+            color: "#fff",
+            fontWeight: "bold",
+            fontSize: "14px",
+            borderRadius: "12px",
+          },
+        }
+      );
+      fetchRequests();
     }
   }, [fetchRequests]);
 
@@ -199,6 +266,27 @@ export default function ProviderRequest() {
     }
   };
 
+  /* =======================
+     REPORT FAKE SOS
+  ======================= */
+  const handleReportFakeSOS = async (req, e) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure this is a fake emergency? The user will be reported to Admins and this request will be terminated immediately.")) return;
+    setReportingFake((prev) => ({ ...prev, [req._id]: true }));
+    try {
+      await api.post("/services/report-fake-sos", { requestId: req._id });
+      toast.success("Fake SOS reported. Request terminated and admins notified.", {
+        duration: 6000,
+        style: { background: "#dc2626", color: "#fff", fontWeight: "bold" },
+      });
+      setRequests((prev) => prev.filter((r) => r._id !== req._id));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to report fake SOS.");
+    } finally {
+      setReportingFake((prev) => ({ ...prev, [req._id]: false }));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50 to-blue-100 p-8">
       <div className="flex items-center justify-between mb-2">
@@ -231,10 +319,21 @@ export default function ProviderRequest() {
           return (
             <div
               key={req._id}
-              className="group rounded-2xl bg-white/80 backdrop-blur p-6 shadow-md hover:shadow-xl transition-all border border-white/50"
+              className={`group rounded-2xl bg-white/80 backdrop-blur p-6 shadow-md hover:shadow-xl transition-all border ${
+                req.isEmergency
+                  ? "border-red-400 shadow-red-200 ring-2 ring-red-400 ring-offset-1"
+                  : "border-white/50"
+              }`}
             >
               <div className="flex items-start justify-between">
-                <h2 className="text-lg font-semibold text-slate-800 capitalize">{req.serviceType}</h2>
+                <h2 className="text-lg font-semibold text-slate-800 capitalize flex items-center gap-2">
+                  {req.isEmergency && (
+                    <span className="inline-flex items-center gap-1 text-xs font-black bg-red-600 text-white px-2 py-0.5 rounded-full animate-pulse">
+                      🚨 SOS
+                    </span>
+                  )}
+                  {req.serviceType}
+                </h2>
                 <span className={`text-xs px-3 py-1 rounded-full font-medium ${statusBadge[req.status] || "bg-slate-100 text-slate-600"}`}>
                   {req.status.toUpperCase()}
                 </span>
@@ -318,6 +417,18 @@ export default function ProviderRequest() {
                             {t.resendOtp}
                           </button>
                         </div>
+                      )}
+
+                      {/* Fake SOS report button — only for emergency requests */}
+                      {req.isEmergency && (
+                        <button
+                          id={`fake-sos-btn-${req._id}`}
+                          onClick={(e) => handleReportFakeSOS(req, e)}
+                          disabled={reportingFake[req._id]}
+                          className="w-full mt-1 rounded-xl border-2 border-red-500 text-red-600 bg-red-50 hover:bg-red-100 py-2 text-sm font-semibold disabled:opacity-50 transition"
+                        >
+                          {reportingFake[req._id] ? "Reporting..." : "🚩 Report Fake SOS"}
+                        </button>
                       )}
                     </div>
                   )}

@@ -6,7 +6,8 @@ const serviceRequestSchema = new mongoose.Schema(
     serviceType: { type: String, required: true, trim: true, lowercase: true },
     problemDescription: { type: String, required: true },
     location: { lat: { type: Number, required: true }, lng: { type: Number, required: true } },
-    status: { type: String, enum: ["open", "assigned", "in_progress", "completed", "rejected", "cancelled"], default: "open" },
+    status: { type: String, enum: ["open", "assigned", "in_progress", "completed", "rejected", "cancelled", "fake_terminated"], default: "open" },
+    isEmergency: { type: Boolean, default: false },
     assignedPartner: { type: mongoose.Schema.Types.ObjectId, ref: "Partner", default: null },
     expiresAt: { type: Date, index: true, default: () => new Date(Date.now() + 60 * 60 * 1000) },
     otp: { type: String }, // For verification before starting

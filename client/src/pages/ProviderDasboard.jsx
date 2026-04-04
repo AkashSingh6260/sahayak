@@ -69,6 +69,22 @@ const ProviderDashboard = () => {
     if (["payment_received", "service_completed", "new_request", "rating_received"].includes(payload.type)) {
       fetchStats();
     }
+    if (payload.type === "fake_sos_alert") {
+      toast.error(
+        payload.message,
+        {
+          duration: 20000,
+          style: {
+            background: "#7f1d1d",
+            color: "#fef2f2",
+            fontWeight: "bold",
+            fontSize: "13px",
+            borderRadius: "12px",
+            maxWidth: "480px",
+          },
+        }
+      );
+    }
   }, [fetchStats]);
 
   useWebSocket(handleWsMessage);

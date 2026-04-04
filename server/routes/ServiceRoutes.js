@@ -14,7 +14,9 @@ import {
   addBilling,
   addRating,
   rejectServiceRequest,
-  getProviderStats
+  getProviderStats,
+  createEmergencySOS,
+  reportFakeSOS,
 } from "../controllers/serviceController.js";
 
 const ServiceRouter = express.Router();
@@ -22,6 +24,10 @@ const ServiceRouter = express.Router();
 /* Customer */
 ServiceRouter.post("/", protect, createServiceRequest);
 ServiceRouter.patch("/cancel", protect, cancelServiceRequest);
+ServiceRouter.post("/sos-emergency", protect, createEmergencySOS);
+
+/* Provider — Fake SOS Report */
+ServiceRouter.post("/report-fake-sos", protect, reportFakeSOS);
 
 /* Provider */
 ServiceRouter.get("/nearby", protect, getNearbyRequests);

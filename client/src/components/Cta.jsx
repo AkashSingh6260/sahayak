@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useLang } from "../context/LanguageContext.jsx";
 import translations from "../context/translations.js";
 
@@ -9,42 +9,52 @@ const Cta = () => {
   const t = translations[lang].cta;
 
   return (
-    <section className="relative py-24 overflow-hidden">
-      {/* Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-800 dark:from-indigo-700 dark:via-indigo-800 dark:to-slate-900" />
+    <section className="bg-slate-900 py-20">
+      <div className="max-w-4xl mx-auto px-4 text-center">
 
-      {/* Glow Orbs */}
-      <div className="absolute -top-32 -left-32 w-[420px] h-[420px] bg-blue-400/30 rounded-full blur-3xl" />
-      <div className="absolute -bottom-32 -right-32 w-[420px] h-[420px] bg-indigo-900/40 rounded-full blur-3xl" />
+        {/* Eyebrow */}
+        <p className="text-xs font-bold uppercase tracking-widest text-orange-400 mb-4">
+          Partner with us
+        </p>
 
-      {/* Content */}
-      <div className="relative max-w-5xl mx-auto px-4 text-center text-white">
-        <h2 className="text-4xl md:text-5xl font-bold mb-5 tracking-tight">
+        <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
           {t.heading}
         </h2>
 
-        <p className="text-indigo-100/90 max-w-2xl mx-auto mb-10 text-lg leading-relaxed">
+        <p className="text-slate-400 max-w-xl mx-auto mb-10 text-base leading-relaxed">
           {t.subheading}
         </p>
 
-        <button
-          onClick={() => navigate("/partner")}
-          className="
-            group inline-flex items-center gap-3
-            bg-white text-indigo-700
-            px-9 py-3.5 rounded-2xl
-            font-semibold
-            shadow-xl
-            hover:scale-105 hover:shadow-2xl
-            transition-all duration-300
-          "
-        >
-          {t.button}
-          <ArrowRight
-            size={18}
-            className="transition-transform group-hover:translate-x-1"
-          />
-        </button>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link
+            to="/partner"
+            className="group inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-8 py-3.5 rounded-xl font-semibold text-sm transition-colors shadow-lg shadow-orange-500/20"
+          >
+            {t.button}
+            <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+          </Link>
+
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 border border-slate-600 text-slate-300 hover:border-slate-400 hover:text-white px-8 py-3.5 rounded-xl font-semibold text-sm transition-colors"
+          >
+            Learn more
+          </Link>
+        </div>
+
+        {/* Stats row */}
+        <div className="mt-14 grid grid-cols-3 gap-6 border-t border-slate-800 pt-10 max-w-lg mx-auto">
+          {[
+            { value: "50K+",  label: "Bookings completed" },
+            { value: "500+",  label: "Verified partners"  },
+            { value: "4.8★",  label: "Customer rating"    },
+          ].map(({ value, label }) => (
+            <div key={label} className="text-center">
+              <p className="text-2xl font-bold text-white">{value}</p>
+              <p className="text-xs text-slate-500 mt-1">{label}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

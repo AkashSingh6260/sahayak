@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Navbar from "../components/Navbar";
+import ChatBot from "../components/ChatWidget.jsx"; // ✅ ADDED
 import { Outlet } from "react-router-dom";
 import api from "../config/api";
 import toast, { Toaster } from "react-hot-toast";
@@ -15,7 +16,7 @@ const MainLayout = () => {
   const user = useSelector((state) => state.auth.user);
 
   /* =======================
-     Fetch Pending Billing (initial load + WS trigger)
+     Fetch Pending Billing
   ======================= */
   const fetchPendingBilling = useCallback(async () => {
     try {
@@ -42,6 +43,9 @@ const MainLayout = () => {
     fetchPendingBilling();
   }, [user, fetchPendingBilling]);
 
+  /* =======================
+     Razorpay Script Load
+  ======================= */
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -53,20 +57,34 @@ const MainLayout = () => {
   }, []);
 
   /* =======================
-     WebSocket — replace polling
-     On billing_ready event → fetch pending billing immediately
+     WebSocket Handling
   ======================= */
   const handleWsMessage = useCallback((payload) => {
     if (payload.type === "billing_ready") {
-      // Small delay to ensure DB is written before fetching
       setTimeout(() => fetchPendingBilling(), 500);
+    }
+    if (payload.type === "fake_sos_warning") {
+      toast.error(
+        payload.message,
+        {
+          duration: 12000,
+          style: {
+            background: "#7f1d1d",
+            color: "#fef2f2",
+            fontWeight: "600",
+            fontSize: "13px",
+            borderRadius: "12px",
+            maxWidth: "420px",
+          },
+        }
+      );
     }
   }, [fetchPendingBilling]);
 
   useWebSocket(handleWsMessage, !!user);
 
   /* =======================
-     Handle Payment
+     Payment Handling
   ======================= */
   const { lang } = useLang();
   const tB = translations[lang].billing;
@@ -77,6 +95,7 @@ const MainLayout = () => {
       return;
     }
 
+    // UPI PAYMENT
     if (paymentMode === "upi") {
       try {
         const { data: order } = await api.post("/orders/create-order", { requestId });
@@ -107,15 +126,17 @@ const MainLayout = () => {
           },
           theme: { color: "#4f46e5" },
         };
+
         const rzp = new window.Razorpay(options);
         rzp.open();
+
       } catch (err) {
         toast.error(tB.failedToInit);
       }
       return;
     }
 
-    // CASH MODE
+    // CASH PAYMENT
     try {
       await api.post("/services/billing", { requestId, paymentMode });
       toast.success(tB.paymentRecorded);
@@ -131,15 +152,27 @@ const MainLayout = () => {
   return (
     <>
       <Toaster position="top-right" />
+
       <Navbar />
+
       <Outlet />
 
-      {/* Pending Billing Modal */}
+      {/* 🔥 CHATBOT INTEGRATION */}
+      <ChatBot isBlocked={showBillingModal} />
+
+      {/* =======================
+         Pending Billing Modal
+      ======================= */}
       {showBillingModal && pendingBilling.length > 0 && (
         <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-1">{tB.completePayment}</h2>
-            <p className="text-sm text-slate-500 mb-5">{tB.serviceComplete}</p>
+            
+            <h2 className="text-2xl font-bold text-gray-800 mb-1">
+              {tB.completePayment}
+            </h2>
+            <p className="text-sm text-slate-500 mb-5">
+              {tB.serviceComplete}
+            </p>
 
             {pendingBilling
               .filter((r, i, arr) =>
@@ -151,29 +184,48 @@ const MainLayout = () => {
                 const vendor = total - platform;
 
                 return (
-                  <div key={req._id} className="border rounded-xl p-4 mb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <div
+                    key={req._id}
+                    className="border rounded-xl p-4 mb-4 bg-gradient-to-r from-blue-50 to-indigo-50"
+                  >
                     <div className="space-y-1.5 text-sm text-gray-700 mb-3">
-                      <p><span className="font-semibold text-gray-900">{tB.service}</span> {req.serviceType}</p>
-                      <p><span className="font-semibold text-gray-900">{tB.problem}</span> {req.problemDescription}</p>
+                      <p><b>{tB.service}</b> {req.serviceType}</p>
+                      <p><b>{tB.problem}</b> {req.problemDescription}</p>
+
                       <div className="mt-2 grid grid-cols-3 gap-2 text-center">
                         <div className="bg-white rounded-lg py-2">
                           <p className="text-xs text-slate-400">{tB.serviceCharge}</p>
-                          <p className="font-bold text-slate-800">₹{req.billing?.workCharge || 0}</p>
+                          <p className="font-bold text-slate-800">
+                            ₹{req.billing?.workCharge || 0}
+                          </p>
                         </div>
+
                         <div className="bg-white rounded-lg py-2">
                           <p className="text-xs text-slate-400">{tB.distanceCharge}</p>
-                          <p className="font-bold text-slate-800">₹{req.billing?.baseCharge || 0}</p>
+                          <p className="font-bold text-slate-800">
+                            ₹{req.billing?.baseCharge || 0}
+                          </p>
                         </div>
+
                         <div className="bg-indigo-100 rounded-lg py-2">
                           <p className="text-xs text-indigo-500">{tB.total}</p>
-                          <p className="font-bold text-indigo-700">₹{total}</p>
+                          <p className="font-bold text-indigo-700">
+                            ₹{total}
+                          </p>
                         </div>
                       </div>
-                      <p className="text-xs text-slate-400 text-center mt-1">{tB.platformFee}: ₹{platform} (20%) · {tB.vendor}: ₹{vendor} (80%)</p>
+
+                      <p className="text-xs text-slate-400 text-center mt-1">
+                        {tB.platformFee}: ₹{platform} (20%) · {tB.vendor}: ₹{vendor} (80%)
+                      </p>
                     </div>
 
+                    {/* Payment Mode */}
                     <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{tB.paymentMode}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {tB.paymentMode}
+                      </label>
+
                       <select
                         value={paymentMode}
                         onChange={(e) => setPaymentMode(e.target.value)}
@@ -185,6 +237,7 @@ const MainLayout = () => {
                       </select>
                     </div>
 
+                    {/* Pay Button */}
                     <button
                       onClick={() => handlePay(req._id)}
                       className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-2.5 rounded-lg font-semibold hover:opacity-90 transition"

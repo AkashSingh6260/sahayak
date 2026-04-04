@@ -677,3 +677,169 @@ export const getProviderStats = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch dashboard stats" });
   }
 };
+
+/* =======================
+   CREATE SOS EMERGENCY REQUEST (Customer)
+======================= */
+export const createEmergencySOS = async (req, res) => {
+  try {
+    let { serviceType, problemDescription, location } = req.body;
+    serviceType = serviceType?.trim().toLowerCase();
+
+    if (!serviceType || !problemDescription || !location?.lat || !location?.lng) {
+      return res.status(400).json({ message: "All fields are required for SOS" });
+    }
+
+    // Prevent duplicate active SOS within 10 minutes
+    const existing = await ServiceRequest.findOne({
+      customerId: req.userId,
+      isEmergency: true,
+      status: "open",
+      createdAt: { $gt: new Date(Date.now() - 10 * 60 * 1000) },
+    });
+    if (existing) {
+      return res.status(400).json({ message: "You already have an active SOS request. Please wait." });
+    }
+
+    const service = await ServiceRequest.create({
+      customerId: req.userId,
+      serviceType,
+      problemDescription,
+      location,
+      status: "open",
+      isEmergency: true,
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min window for SOS
+    });
+
+    // Find nearby approved partners matching profession within 25km
+    const partners = await Partner.find({
+      isAvailable: true,
+      status: "approved",
+      profession: { $regex: `^${serviceType}$`, $options: "i" },
+      location: { $exists: true },
+    });
+
+    const nearbyPartners = partners.filter((p) => {
+      if (!p.location?.lat || !p.location?.lng) return false;
+      const distance = getDistanceInKm(p.location.lat, p.location.lng, location.lat, location.lng);
+      return distance <= 25;
+    });
+
+    // Save DB notifications for nearby partners
+    await Notification.insertMany(
+      nearbyPartners.map((p) => ({
+        user: p.user,
+        message: `🚨 EMERGENCY: ${problemDescription} near your location`,
+        type: "service_request",
+        relatedId: service._id,
+        status: "unread",
+      }))
+    );
+
+    // Push real-time WebSocket SOS alert to all nearby partners
+    nearbyPartners.forEach((p) => {
+      notifyUser(p.user.toString(), {
+        type: "sos_request_alert",
+        message: `🚨 URGENT SOS: ${problemDescription} near you!`,
+        data: {
+          requestId: service._id,
+          serviceType,
+          problemDescription,
+          location,
+          isEmergency: true,
+        },
+      });
+    });
+
+    res.status(201).json({
+      message: "SOS request broadcasted successfully",
+      service,
+      notifiedPartners: nearbyPartners.length,
+    });
+  } catch (error) {
+    console.error("SOS EMERGENCY ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+/* =======================
+   REPORT FAKE SOS (Provider)
+======================= */
+export const reportFakeSOS = async (req, res) => {
+  try {
+    const { requestId } = req.body;
+
+    // Verify this partner is assigned to the request
+    const partner = await Partner.findOne({ user: req.userId });
+    if (!partner) return res.status(403).json({ message: "Not authorized" });
+
+    const request = await ServiceRequest.findOne({
+      _id: requestId,
+      assignedPartner: partner._id,
+      isEmergency: true,
+      status: { $in: ["assigned", "in_progress"] },
+    }).populate("customerId", "_id name email");
+
+    if (!request) {
+      return res.status(404).json({ message: "Emergency request not found or not assigned to you" });
+    }
+
+    // Mark the request as fake_terminated
+    request.status = "fake_terminated";
+    await request.save();
+
+    // Close related notifications
+    await Notification.updateMany({ relatedId: requestId }, { status: "closed" });
+
+    const customerId = request.customerId._id;
+    const customerName = request.customerId.name;
+
+    // Find all admins to notify
+    const admins = await User.find({ role: "admin" });
+    const adminIds = admins.map((a) => a._id.toString());
+
+    // Notify all admins via WebSocket
+    notifyMany(adminIds, {
+      type: "fake_sos_alert",
+      message: `⚠️ Fake SOS reported! User: ${customerName} (ID: ${customerId}) filed a fake emergency for "${request.serviceType}". Request #${requestId} terminated.`,
+      data: {
+        requestId: request._id,
+        customerId,
+        customerName,
+        serviceType: request.serviceType,
+        problemDescription: request.problemDescription,
+        reportedBy: partner.fullName,
+      },
+    });
+
+    // Save DB notification for admins
+    await Notification.insertMany(
+      admins.map((a) => ({
+        user: a._id,
+        message: `⚠️ Fake SOS alert: ${customerName} filed a fake emergency for "${request.serviceType}". Reported by ${partner.fullName}.`,
+        type: "status_update",
+        status: "unread",
+      }))
+    );
+
+    // Notify the customer that their SOS was terminated
+    notifyUser(customerId.toString(), {
+      type: "fake_sos_warning",
+      message: `🚫 Your emergency SOS for "${request.serviceType}" has been terminated. Our partner flagged it as non-genuine. This incident has been reported to administrators and recorded on your account.`,
+      data: { requestId: request._id },
+    });
+
+    // Save DB notification for customer
+    await Notification.create({
+      user: customerId,
+      message: `Your SOS request was terminated for being flagged as a fake emergency. This has been reported to Sahayak admin.`,
+      type: "status_update",
+      status: "unread",
+    });
+
+    res.json({ message: "Fake SOS reported successfully. Request terminated and admins notified." });
+  } catch (err) {
+    console.error("REPORT FAKE SOS ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

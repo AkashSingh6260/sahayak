@@ -9,6 +9,8 @@ server/node_modules
 .env.production
 client/.env
 server/.env
+chatbot/.env
+server/uploads
 
 ## Build output
 client/dist
@@ -25,3 +27,4 @@ Thumbs.db
 ## Editor
 .vscode/
 .idea/
+

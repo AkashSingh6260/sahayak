@@ -3,12 +3,12 @@ import { motion as Motion } from "framer-motion";
 import { Home, ShieldCheck, Wrench, Zap, Hammer, Globe2 } from "lucide-react";
 
 const languages = [
-  { name: "Hindi", label: "हिंदी", icon: Wrench, service: "Plumbing support", accent: "text-amber-700", ring: "ring-amber-200/70" },
-  { name: "Bengali", label: "বাংলা", icon: Hammer, service: "Carpentry care", accent: "text-fuchsia-700", ring: "ring-fuchsia-200/70" },
-  { name: "Marathi", label: "मराठी", icon: Zap, service: "Electrical help", accent: "text-cyan-700", ring: "ring-cyan-200/70" },
-  { name: "Gujarati", label: "ગુજરાતી", icon: ShieldCheck, service: "Safety checks", accent: "text-emerald-700", ring: "ring-emerald-200/70" },
-  { name: "Kannada", label: "ಕನ್ನಡ", icon: Home, service: "Home repairs", accent: "text-sky-700", ring: "ring-sky-200/70" },
-  { name: "Tamil", label: "தமிழ்", icon: Globe2, service: "Trusted local help", accent: "text-violet-700", ring: "ring-violet-200/70" },
+  { name: "Hindi",    label: "हिंदी",    icon: Wrench,      service: "Plumbing support",   iconBg: "bg-orange-50",  iconColor: "text-orange-600" },
+  { name: "Bengali",  label: "বাংলা",    icon: Hammer,      service: "Carpentry care",     iconBg: "bg-stone-50",   iconColor: "text-stone-600" },
+  { name: "Marathi",  label: "मराठी",   icon: Zap,         service: "Electrical help",    iconBg: "bg-blue-50",    iconColor: "text-blue-600" },
+  { name: "Gujarati", label: "ગુજરાતી", icon: ShieldCheck, service: "Safety checks",      iconBg: "bg-emerald-50", iconColor: "text-emerald-600" },
+  { name: "Kannada",  label: "ಕನ್ನಡ",   icon: Home,        service: "Home repairs",       iconBg: "bg-slate-100",  iconColor: "text-slate-600" },
+  { name: "Tamil",    label: "தமிழ்",   icon: Globe2,      service: "Trusted local help", iconBg: "bg-rose-50",    iconColor: "text-rose-600" },
 ];
 
 const desktopConfig = [
@@ -46,48 +46,45 @@ const LanguageCarousel = () => {
   }, [cards.length, isDesktop]);
 
   return (
-    <section className="bg-slate-50 pt-16 pb-16 px-4 sm:px-6 lg:px-8">
+    <section className="bg-white border-t border-slate-100 pt-16 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-indigo-600">Localized support for every language</p>
-          <h3 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            Speak with local experts in your own bhasha
+          <p className="text-xs font-bold uppercase tracking-widest text-orange-500 mb-2">Available across Bharat</p>
+          <h3 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Service in your own language
           </h3>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-            Our 3D language carousel shows how Sahayak connects users across Bharat with trusted help in Hindi, Bengali, Marathi, Tamil and more.
+          <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-slate-500">
+            Book help in Hindi, Bengali, Marathi, Tamil and more — we connect you with local experts who speak your language.
           </p>
         </div>
 
-        <div className="relative mt-12">
+        <div className="relative mt-10">
           <div className="hidden md:block">
-            <div className="relative mx-auto flex h-[420px] max-w-6xl items-center justify-center rounded-[2rem] bg-white p-8 shadow-sm" style={{ perspective: 1000 }}>
-              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-slate-50 via-white to-slate-50" />
+            <div className="relative mx-auto flex h-[380px] max-w-6xl items-center justify-center rounded-2xl bg-slate-50 border border-slate-200 p-8" style={{ perspective: 1000 }}>
               <div className="relative flex h-full w-full items-center justify-center">
                 {cards.map((language, index) => {
                   const motionProps = cardMotion(index, activeIndex);
                   const Icon = language.icon;
+                  const isActive = index === activeIndex;
                   return (
                     <Motion.button
                       key={language.name}
                       type="button"
                       onClick={() => setActiveIndex(index)}
-                      className="absolute top-1/2 h-[320px] min-w-[230px] -translate-y-1/2 rounded-[2rem] border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:shadow-md focus:outline-none"
+                      className={`absolute top-1/2 h-[290px] min-w-[210px] -translate-y-1/2 rounded-2xl border bg-white p-6 text-left focus:outline-none ${
+                        isActive ? "border-orange-300 shadow-lg shadow-orange-100/50" : "border-slate-200 shadow-sm"
+                      }`}
                       style={{ zIndex: motionProps.zIndex, transformStyle: "preserve-3d" }}
-                      animate={{
-                        x: motionProps.x,
-                        rotateY: motionProps.rotateY,
-                        scale: motionProps.scale,
-                        opacity: motionProps.opacity,
-                      }}
+                      animate={{ x: motionProps.x, rotateY: motionProps.rotateY, scale: motionProps.scale, opacity: motionProps.opacity }}
                       transition={{ type: "spring", stiffness: 120, damping: 20, duration: 0.62 }}
                     >
-                      <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 ring-2 ${language.ring}`}>
-                        <Icon className={`h-6 w-6 ${language.accent}`} />
+                      <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl ${language.iconBg}`}>
+                        <Icon className={`h-5 w-5 ${language.iconColor}`} />
                       </div>
-                      <p className="text-sm uppercase tracking-[0.32em] text-slate-500">Language</p>
-                      <h4 className="mt-3 text-2xl font-semibold text-slate-900">{language.name}</h4>
-                      <p className="mt-2 text-base text-slate-500">{language.label}</p>
-                      <div className="mt-5 inline-flex rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-700">
+                      <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Language</p>
+                      <h4 className="mt-2 text-xl font-bold text-slate-900">{language.name}</h4>
+                      <p className="mt-1 text-sm text-slate-500">{language.label}</p>
+                      <div className="mt-4 inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
                         {language.service}
                       </div>
                     </Motion.button>
@@ -99,7 +96,7 @@ const LanguageCarousel = () => {
 
           <div className="md:hidden">
             <div className="-mx-4 overflow-x-auto pb-6 pt-6">
-              <div className="flex gap-4 px-4">
+              <div className="flex gap-3 px-4">
                 {cards.map((language, index) => {
                   const isActive = index === activeIndex;
                   const Icon = language.icon;
@@ -108,16 +105,17 @@ const LanguageCarousel = () => {
                       key={language.name}
                       type="button"
                       onClick={() => setActiveIndex(index)}
-                      className={`min-w-[260px] rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition-transform duration-300 ${
-                        isActive ? "scale-[1.03] shadow-md" : "scale-100"
+                      className={`min-w-[220px] rounded-xl border bg-white p-5 text-left transition-all duration-200 ${
+                        isActive ? "border-orange-300 shadow-md" : "border-slate-200 shadow-sm"
                       }`}
                     >
-                      <div className={`mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 ring-2 ${language.ring}`}>
-                        <Icon className={`h-6 w-6 ${language.accent}`} />
+                      <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${language.iconBg}`}>
+                        <Icon className={`h-5 w-5 ${language.iconColor}`} />
                       </div>
-                      <p className="text-sm uppercase tracking-[0.32em] text-slate-500">Language</p>
-                      <h4 className="mt-3 text-2xl font-semibold text-slate-900">{language.name}</h4>
-                      <p className="mt-2 text-sm text-slate-500">{language.label}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Language</p>
+                      <h4 className="mt-1.5 text-lg font-bold text-slate-900">{language.name}</h4>
+                      <p className="mt-0.5 text-sm text-slate-500">{language.label}</p>
+                      <div className="mt-3 inline-block rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{language.service}</div>
                     </button>
                   );
                 })}
