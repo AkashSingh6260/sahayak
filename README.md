@@ -246,7 +246,6 @@ sahayak/
 │   ├── requirements.txt
 │   └── Sahayak_RAG_Policy_Guidelines.pdf
 │
-├── sos.md
 └── .gitignore
 ```
 
