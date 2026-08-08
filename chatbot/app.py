@@ -1,5 +1,6 @@
 import os
 import logging
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,14 +12,14 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Dynamically resolve path relative to app.py directory
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_PDF_PATH = str(BASE_DIR / "Sahayak_RAG_Policy_Guidelines.pdf")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ✅ Use app.state instead of a bare global
     try:
-        pdf_path = os.getenv(
-            'PDF_PATH',
-            r'C:\Ankita-new\Project1\chatbot\Sahayak_RAG_Policy_Guidelines.pdf',
-        )
+        pdf_path = os.getenv('PDF_PATH', DEFAULT_PDF_PATH)
         logger.info(f"Loading chatbot from: {pdf_path}")
         app.state.chatbot = DocumentChatbot(pdf_path=pdf_path)
         logger.info("✅ Chatbot initialized successfully")
@@ -26,7 +27,7 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Failed to initialize chatbot: {e}")
         raise
     yield
-    # Cleanup on shutdown (optional)
+    # Cleanup on shutdown
     app.state.chatbot = None
 
 app = FastAPI(lifespan=lifespan)
@@ -55,7 +56,6 @@ async def health_check(request: Request):
 
 @app.post("/chat")
 async def chat_with_ai(input_data: ChatInput, request: Request):
-    # ✅ Read from app.state — always reliable in async context
     chatbot = getattr(request.app.state, "chatbot", None)
     
     if chatbot is None:
@@ -78,5 +78,4 @@ async def chat_with_ai(input_data: ChatInput, request: Request):
 
 if __name__ == "__main__":
     import uvicorn
-    # ✅ reload=True breaks lifespan — use False, or run via CLI with --reload
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False)
