@@ -1,7 +1,11 @@
+import os
 import urllib.request
 import json
+from dotenv import load_dotenv
 
-url = "http://localhost:8000/chat"
+load_dotenv()
+CHATBOT_URL = os.getenv("CHATBOT_URL", "http://localhost:8000")
+url = f"{CHATBOT_URL}/chat"
 data = {
     "user_message": "Hello, what is this document about?",
     "session_id": "test_session_1"

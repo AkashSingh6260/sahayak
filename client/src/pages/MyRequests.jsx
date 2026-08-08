@@ -73,8 +73,9 @@ const MyRequests = () => {
   const tB = translations[lang].billing;
   const tProf = translations[lang].professions;
 
-  const REQUESTS_URL = "http://localhost:3000/api/requests";
-  const SERVICES_URL = "http://localhost:3000/api/services";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+  const REQUESTS_URL = `${API_BASE_URL}/requests`;
+  const SERVICES_URL = `${API_BASE_URL}/services`;
   const token = localStorage.getItem("token");
 
   const fetchRequests = useCallback(async () => {
@@ -140,7 +141,7 @@ const MyRequests = () => {
     try {
       // 1. Create order on backend
       const { data: order } = await axios.post(
-        "http://localhost:3000/api/orders/create-order",
+        `${API_BASE_URL}/orders/create-order`,
         { requestId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -158,7 +159,7 @@ const MyRequests = () => {
           try {
             // 3. Verify payment on backend
             const verifyRes = await axios.post(
-              "http://localhost:3000/api/orders/verify-payment",
+              `${API_BASE_URL}/orders/verify-payment`,
               {
                 ...response,
                 requestId

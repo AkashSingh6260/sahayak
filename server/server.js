@@ -34,9 +34,14 @@ app.use("/api", apiLimiter);
 await connectDb();
 
 app.use(express.json());
+
+const clientOrigins = process.env.CLIENT_URL
+    ? process.env.CLIENT_URL.split(",").map((origin) => origin.trim())
+    : ["http://localhost:5173"];
+
 app.use(
     cors({
-        origin: process.env.CLIENT_URL,
+        origin: clientOrigins,
         credentials: true,
     })
 );

@@ -29,7 +29,7 @@ class DocumentChatbot:
         if pdf_path:
             self.pdf_path = pdf_path
         else:
-            self.pdf_path = r"C:\Ankita-new\Project1\chatbot\Sahayak_RAG_Policy_Guidelines.pdf"
+            self.pdf_path = r'C:\Ankita-new\Project1\chatbot\Sahayak_RAG_Policy_Guidelines.pdf'
 
         self.store = {}
         self._init_chain()
@@ -55,7 +55,11 @@ class DocumentChatbot:
         contextualize_q_system_prompt = """Given a chat history and the latest user question \
 which might reference context in the chat history, formulate a standalone question \
 which can be understood without the chat history. Do NOT answer the question, \
-just reformulate it if needed and otherwise return it as is."""
+just reformulate it if needed and otherwise return it as is.
+give instruction if user ask about the services like electrician, plumber, carpenter, cleaner, driver and tutor and also give suggestion if user ask for suggestion about the services and problem they are facing and make sure to answer to the question if they are relevant to the services of the application ,it was build similar to urban care so answer if user ask for suggestion and about service and problem 
+-if they ask i have short circuit problem in my house so what should i do then answer like this "For a short circuit problem, it's important to turn off the main power supply immediately to prevent any hazards. Then, you should contact a licensed electrician to inspect and repair the issue safely. Avoid trying to fix electrical problems on your own, as it can be dangerous.
+make sure to answer the question if they are relevant to the services of the application ,it was build similar to urban care so answer if user ask for suggestion and about service and problem
+-if they ask i have short circuit problem in my house so what should i do then answer like"""
         
         contextualize_q_prompt = ChatPromptTemplate.from_messages([
             ('system', contextualize_q_system_prompt),
@@ -82,6 +86,10 @@ Guidelines:
 - Do not guess or use outside knowledge
 - Keep answers conversational, minimum 60 words, maximum 3-4 sentences
 - Be accurate, clear, and easy to understand
+-ive instruction if user ask about the services like electrician, plumber, carpenter, cleaner, driver and tutor and also give suggestion if user ask for suggestion about the services and problem they are facing and make sure to answer to the question if they are relevant to the services of the application ,it was build similar to urban care so answer if user ask for suggestion and about service and problem 
+-if they ask i have short circuit problem in my house so what should i do then answer like this "For a short circuit problem, it's important to turn off the main power supply immediately to prevent any hazards. Then, you should contact a licensed electrician to inspect and repair the issue safely. Avoid trying to fix electrical problems on your own, as it can be dangerous.
+        
+
 
 Context:
 {context}"""

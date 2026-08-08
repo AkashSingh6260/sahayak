@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 
 const SESSION_ID = "user_" + Math.random().toString(36).slice(2, 9);
+const CHATBOT_URL = import.meta.env.VITE_CHATBOT_URL || "http://localhost:8000";
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,7 +29,7 @@ export default function ChatWidget() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/chat", { // ✅ Fixed port
+      const res = await fetch(`${CHATBOT_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_message: trimmed, session_id: SESSION_ID }),

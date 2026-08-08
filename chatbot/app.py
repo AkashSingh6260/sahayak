@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
     try:
         pdf_path = os.getenv(
             'PDF_PATH',
-            r"C:\Ankita-new\Project1\chatbot\Sahayak_RAG_Policy_Guidelines.pdf",
+            r'C:\Ankita-new\Project1\chatbot\Sahayak_RAG_Policy_Guidelines.pdf',
         )
         logger.info(f"Loading chatbot from: {pdf_path}")
         app.state.chatbot = DocumentChatbot(pdf_path=pdf_path)
@@ -31,14 +31,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+chatbot_origins = os.getenv(
+    "CHATBOT_CLIENT_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:8000",
-        "http://127.0.0.1:5173",  # ✅ Added — Vite sometimes uses 127.0.0.1
-        "http://127.0.0.1:8000",
-    ],
+    allow_origins=[origin.strip() for origin in chatbot_origins if origin.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
