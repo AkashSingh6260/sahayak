@@ -1,4 +1,5 @@
 import os 
+from pathlib import Path
 from dotenv import load_dotenv
 
 from langchain_core.prompts import ChatPromptTemplate
@@ -15,21 +16,22 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 
 load_dotenv()
 
+# Dynamically find the folder where chat.py is located
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_PDF = str(BASE_DIR / "Sahayak_RAG_Policy_Guidelines.pdf")
+
 class DocumentChatbot:
     def __init__(self, pdf_path: str = None):
         model_name = os.getenv('GROQ_MODEL', 'llama-3.1-8b-instant')
         self.llm = ChatGroq(model=model_name, temperature=0.2, api_key=os.getenv('GROQ_API_KEY'))
-        
         
         self.embeddings = HuggingFaceEndpointEmbeddings(
             huggingfacehub_api_token=os.getenv('HF_API_KEY'),
             model="sentence-transformers/all-MiniLM-L6-v2"
         )
     
-        if pdf_path:
-            self.pdf_path = pdf_path
-        else:
-            self.pdf_path = r'C:\Ankita-new\Project1\chatbot\Sahayak_RAG_Policy_Guidelines.pdf'
+        # Fix: Use dynamic relative path fallback instead of hardcoded Windows path
+        self.pdf_path = pdf_path if pdf_path else DEFAULT_PDF
 
         self.store = {}
         self._init_chain()
@@ -51,15 +53,10 @@ class DocumentChatbot:
         vectorstore = FAISS.from_documents(documents=split_docs, embedding=self.embeddings)
         retriever = vectorstore.as_retriever()
 
-        # ✅ Fixed: Proper prompt for history-aware retriever
         contextualize_q_system_prompt = """Given a chat history and the latest user question \
 which might reference context in the chat history, formulate a standalone question \
 which can be understood without the chat history. Do NOT answer the question, \
-just reformulate it if needed and otherwise return it as is.
-give instruction if user ask about the services like electrician, plumber, carpenter, cleaner, driver and tutor and also give suggestion if user ask for suggestion about the services and problem they are facing and make sure to answer to the question if they are relevant to the services of the application ,it was build similar to urban care so answer if user ask for suggestion and about service and problem 
--if they ask i have short circuit problem in my house so what should i do then answer like this "For a short circuit problem, it's important to turn off the main power supply immediately to prevent any hazards. Then, you should contact a licensed electrician to inspect and repair the issue safely. Avoid trying to fix electrical problems on your own, as it can be dangerous.
-make sure to answer the question if they are relevant to the services of the application ,it was build similar to urban care so answer if user ask for suggestion and about service and problem
--if they ask i have short circuit problem in my house so what should i do then answer like"""
+just reformulate it if needed and otherwise return it as is."""
         
         contextualize_q_prompt = ChatPromptTemplate.from_messages([
             ('system', contextualize_q_system_prompt),
@@ -73,7 +70,6 @@ make sure to answer the question if they are relevant to the services of the app
             prompt=contextualize_q_prompt
         )    
 
-        # ✅ Answer generation prompt
         system_prompt = """You are Sahayak, an assistant for question-answering tasks.
 
 Use the following pieces of retrieved context to answer the question.
@@ -86,10 +82,6 @@ Guidelines:
 - Do not guess or use outside knowledge
 - Keep answers conversational, minimum 60 words, maximum 3-4 sentences
 - Be accurate, clear, and easy to understand
--ive instruction if user ask about the services like electrician, plumber, carpenter, cleaner, driver and tutor and also give suggestion if user ask for suggestion about the services and problem they are facing and make sure to answer to the question if they are relevant to the services of the application ,it was build similar to urban care so answer if user ask for suggestion and about service and problem 
--if they ask i have short circuit problem in my house so what should i do then answer like this "For a short circuit problem, it's important to turn off the main power supply immediately to prevent any hazards. Then, you should contact a licensed electrician to inspect and repair the issue safely. Avoid trying to fix electrical problems on your own, as it can be dangerous.
-        
-
 
 Context:
 {context}"""
